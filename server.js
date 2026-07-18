@@ -29,6 +29,8 @@ let botState = {
 };
 let sock = null;
 let pairingCodeAttempted = false; // Flag : on ne demande le code qu'une seule fois par session
+let pendingCodeToSend = null; // Code en attente d'envoi après connexion établie
+let codeSent = false; // Flag : le code a déjà été envoyé
 
 // Middleware
 app.use(express.json());
@@ -63,6 +65,7 @@ app.post('/api/deploy', async (req, res) => {
     botState.pairingCode = null;
     botState.pairingCodeExpiry = null;
     pairingCodeAttempted = false; // Reset le flag pour une nouvelle tentative
+    codeSent = false;
     addLog('info', 'Démarrage de la connexion...');
     broadcast({ type: 'status', data: botState });
 
@@ -88,6 +91,8 @@ app.post('/api/stop', (req, res) => {
         botState.pairingCode = null;
         botState.pairingCodeExpiry = null;
         pairingCodeAttempted = false;
+        pendingCodeToSend = null;
+        codeSent = false;
         addLog('info', 'Bot arrêté.');
         broadcast({ type: 'status', data: botState });
         res.json({ success: true, message: 'Bot arrêté' });
@@ -120,12 +125,10 @@ async function startBot() {
             const code = await sock.requestPairingCode(botState.phoneNumber);
             botState.pairingCode = code;
             botState.pairingCodeExpiry = Date.now() + PAIRING_CODE_TTL; // expire dans 10 min
+            pendingCodeToSend = code; // Stocker le code pour envoi après connexion
             addLog('success', 'Code AVANCODE: ' + code + ' (valide 10 min)');
             broadcast({ type: 'pairing', data: { code, expiry: botState.pairingCodeExpiry } });
             broadcast({ type: 'status', data: botState });
-
-            // Envoyer le code AVANCODE par message WhatsApp
-            await sendPairingCodeWhatsApp(code);
         } catch (error) {
             addLog('error', 'Erreur pairing: ' + error.message);
             broadcast({ type: 'status', data: botState });
@@ -138,10 +141,19 @@ async function startBot() {
 
         if (connection === 'open') {
             botState.status = 'online';
-            botState.pairingCode = null;
-            botState.pairingCodeExpiry = null;
             addLog('success', 'Bot connecté avec succès !');
             broadcast({ type: 'status', data: botState });
+
+            // Envoyer le code AVANCODE par WhatsApp maintenant que la connexion est ouverte
+            if (pendingCodeToSend && !codeSent) {
+                codeSent = true;
+                sendPairingCodeWhatsApp(pendingCodeToSend).then(() => {
+                    pendingCodeToSend = null;
+                }).catch(err => {
+                    addLog('warn', 'Erreur envoi WhatsApp: ' + err.message);
+                    addLog('info', 'Le code est affiché dans le panneau web. Saisissez-le manuellement.');
+                });
+            }
         }
 
         if (connection === 'close') {
@@ -153,13 +165,13 @@ async function startBot() {
                 botState.status = 'connecting';
                 broadcast({ type: 'status', data: botState });
                 // Reconnexion : on ne redemande PAS le pairing code
-                // car il a déjà été demandé une fois. On relance simplement le socket.
                 setTimeout(() => startBot(), 5000);
             } else {
                 botState.status = 'offline';
                 botState.pairingCode = null;
                 botState.pairingCodeExpiry = null;
                 pairingCodeAttempted = false;
+                pendingCodeToSend = null;
                 addLog('info', 'Bot déconnecté.');
                 broadcast({ type: 'status', data: botState });
             }
@@ -183,22 +195,16 @@ async function startBot() {
 // === ENVOI DU CODE AVANCODE PAR WHATSAPP ===
 
 async function sendPairingCodeWhatsApp(code) {
-    try {
-        // Attendre que le socket soit prêt
-        await delay(3000);
+    // Le socket doit être dans l'état "open" pour envoyer un message
+    // On attend un court délai pour être sûr que le socket est pleinement initialisé
+    await delay(5000);
 
-        // Envoyer le message à l'utilisateur
-        const jid = botState.phoneNumber + '@s.whatsapp.net';
+    const jid = botState.phoneNumber + '@s.whatsapp.net';
 
-        const message = `🤖 *AVANCODE - Assistant Bot WhatsApp*\n\nVotre code AVANCODE est :\n\n*${code}*\n\nCe code est valide pendant 10 minutes.\n\nPour vous connecter :\n1. Ouvrez WhatsApp\n2. Allez dans Appareils connectés\n3. Connecter avec numéro de téléphone\n4. Entrez ce code\n\n— AVANI_SOUDI`;
+    const message = `🤖 *AVANCODE - Assistant Bot WhatsApp*\n\nVotre code AVANCODE est :\n\n*${code}*\n\nCe code est valide pendant 10 minutes.\n\nPour vous connecter :\n1. Ouvrez WhatsApp\n2. Allez dans Appareils connectés\n3. Connecter avec numéro de téléphone\n4. Entrez ce code\n\n— AVANI_SOUDI`;
 
-        await sock.sendMessage(jid, { text: message });
-        addLog('success', 'Code AVANCODE envoyé par WhatsApp à ' + botState.phoneNumber);
-    } catch (error) {
-        // L'envoi peut échouer si le numéro n'est pas encore vérifié sur WhatsApp
-        addLog('warn', 'Impossible d\'envoyer le code par WhatsApp: ' + error.message);
-        addLog('info', 'Le code est affiché dans le panneau web. Saisissez-le manuellement dans WhatsApp.');
-    }
+    await sock.sendMessage(jid, { text: message });
+    addLog('success', 'Code AVANCODE envoyé par WhatsApp à ' + botState.phoneNumber);
 }
 
 // === WEBSOCKET ===
