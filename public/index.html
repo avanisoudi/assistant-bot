@@ -91,12 +91,33 @@
             display: inline-block;
             margin: 10px 0;
             font-family: 'Courier New', monospace;
+            user-select: all;
+            cursor: pointer;
         }
         .pairing-instructions {
             color: #aab;
             font-size: 0.9em;
             margin-top: 10px;
             line-height: 1.6;
+        }
+        .pairing-timer {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: rgba(240, 173, 78, 0.2);
+            border-radius: 8px;
+            color: #f0ad4e;
+            font-weight: bold;
+            font-size: 0.95em;
+            display: inline-block;
+        }
+        .pairing-timer.expired {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+        }
+        .copy-hint {
+            color: #8899aa;
+            font-size: 0.8em;
+            margin-top: 8px;
         }
 
         /* CONTROL PANEL */
@@ -254,10 +275,12 @@
         <!-- PAIRING CODE -->
         <div class="pairing-section" id="pairingSection">
             <h3>Code AVANCODE</h3>
-            <div class="pairing-code" id="pairingCode">--------</div>
+            <div class="pairing-code" id="pairingCode" title="Cliquer pour copier">--------</div>
+            <p class="copy-hint" id="copyHint">Cliquez sur le code pour le copier</p>
             <p class="pairing-instructions">
                 Ouvrez WhatsApp > Appareils connectes > Connecter un appareil > Connecter avec numero de telephone > Collez ce code
             </p>
+            <div class="pairing-timer" id="pairingTimer">Temps restant : 10:00</div>
         </div>
 
         <!-- CONTROL PANEL -->
@@ -307,13 +330,15 @@
 
         <!-- FOOTER -->
         <div class="footer">
-            <p>AVANCODE v1.0.5 | Assistant Bot WhatsApp</p>
+            <p>AVANCODE v1.0.6 | Assistant Bot WhatsApp</p>
             <p>2026 AVANI_SOUDI - Tous droits reserves</p>
         </div>
     </div>
 
     <script>
         let ws = null;
+        let codeExpiry = null;
+        let timerInterval = null;
 
         function connectWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -338,7 +363,7 @@
                     addLogEntry(data.data);
                     break;
                 case 'pairing':
-                    showPairingCode(data.data.code);
+                    showPairingCode(data.data.code, data.data.expiry);
                     break;
             }
         }
@@ -357,6 +382,7 @@
                     btnDeploy.disabled = true;
                     btnStop.disabled = false;
                     document.getElementById('pairingSection').classList.remove('visible');
+                    clearInterval(timerInterval);
                     break;
                 case 'connecting':
                     text.textContent = 'Connexion en cours...';
@@ -368,18 +394,59 @@
                     btnDeploy.disabled = false;
                     btnStop.disabled = true;
                     document.getElementById('pairingSection').classList.remove('visible');
+                    clearInterval(timerInterval);
                     break;
             }
 
             if (state.pairingCode) {
-                showPairingCode(state.pairingCode);
+                showPairingCode(state.pairingCode, state.pairingCodeExpiry);
             }
         }
 
-        function showPairingCode(code) {
+        function showPairingCode(code, expiry) {
             document.getElementById('pairingCode').textContent = code;
             document.getElementById('pairingSection').classList.add('visible');
+            document.getElementById('copyHint').textContent = 'Cliquez sur le code pour le copier';
+
+            if (expiry) {
+                codeExpiry = new Date(expiry).getTime();
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, 1000);
+                updateTimer();
+            }
         }
+
+        function updateTimer() {
+            if (!codeExpiry) return;
+            const now = Date.now();
+            const remaining = codeExpiry - now;
+            const timerEl = document.getElementById('pairingTimer');
+
+            if (remaining <= 0) {
+                timerEl.textContent = 'Code expiré - Redéployez le bot';
+                timerEl.className = 'pairing-timer expired';
+                clearInterval(timerInterval);
+                return;
+            }
+
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            timerEl.textContent = `Temps restant : ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            timerEl.className = 'pairing-timer';
+        }
+
+        // Copier le code au clic
+        document.getElementById('pairingCode').addEventListener('click', function() {
+            const code = this.textContent;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => {
+                    document.getElementById('copyHint').textContent = 'Code copié !';
+                    setTimeout(() => {
+                        document.getElementById('copyHint').textContent = 'Cliquez sur le code pour le copier';
+                    }, 2000);
+                });
+            }
+        });
 
         function addLogEntry(log) {
             const container = document.getElementById('logsContainer');
