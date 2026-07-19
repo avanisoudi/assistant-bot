@@ -1,16 +1,22 @@
 {
-  "name": "assistant-bot-panel",
-  "version": "1.0.5",
-  "description": "Panneau de contrôle Assistant Bot WhatsApp - AVANI_SOUDI",
+  "name": "assistant-bot",
+  "version": "1.0.6",
+  "description": "Panneau de contrôle + Bot WhatsApp complet - AVANI_SOUDI",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "bot": "node index.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.16",
+    "axios": "^1.7.9",
     "express": "^4.18.2",
     "ws": "^8.16.0",
-    "pino": "^8.17.2"
+    "pino": "^8.17.2",
+    "clipboardy": "^2.3.0",
+    "jimp": "^1.6.1",
+    "moment-timezone": "^0.6.2",
+    "sharp": "^0.33.5"
   },
   "engines": {
     "node": ">=18.0.0"

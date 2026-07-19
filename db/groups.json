@@ -1,0 +1,13 @@
+{
+  "120363427650240613@g.us": {
+    "antiflood": true
+  },
+  "120363423096247184@g.us": {
+    "welcome": true,
+    "goodbye": true
+  },
+  "120363409586266309@g.us": {
+    "antiflood": true,
+    "antilink": true
+  }
+}
