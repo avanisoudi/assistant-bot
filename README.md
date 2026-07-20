@@ -1,55 +1,59 @@
 # AVANCODE - Assistant Bot WhatsApp
 
-Panneau de controle et bot complet pour gerer vos groupes WhatsApp.
+Application web complete pour deployer et gerer un bot WhatsApp avec 58 commandes.
+
+## Architecture
+
+- **Frontend** : React 19 + Tailwind CSS 4 + tRPC (landing page + dashboard)
+- **Backend** : Express + Baileys (bot WhatsApp)
+- **Base de donnees** : MySQL via Drizzle ORM
+
+## Structure
+
+```
+client/          -> Landing page + Dashboard (React)
+server/          -> API tRPC + Bot Manager (Baileys)
+bot-commands/    -> 58 commandes du bot (cmd/ + lib/)
+drizzle/         -> Schema et migrations BDD
+```
 
 ## Fonctionnalites
 
-- **Code AVANCODE avec duree de 3 minutes** : Le code de pairing est valide pendant 3 minutes
-- **Envoi automatique par WhatsApp** : Le code AVANCODE est envoye directement par message WhatsApp
-- **Affichage web en temps reel** : Le code est affiche dans le panneau web avec un compte a rebours
-- **Copier en un clic** : Cliquez sur le code pour le copier automatiquement
-- **Pas de regeneration intempestive** : Le code n'est demande qu'une seule fois par session
-- **58 commandes** : Antilink, antitoxic, antibot, antidelete, antispam, kick, promote, demote, stickers, stats, welcome/goodbye, et plus
+- Landing page professionnelle avec dark theme et couleur WhatsApp #25D366
+- Systeme d'authentification securise
+- Dashboard avec pairing code AVANCODE (3 min)
+- Envoi automatique du code par WhatsApp
+- Console de logs temps reel
+- 58 commandes : antilink, antitoxic, antiflood, autoread, autotype, welcome/goodbye, antidelete, stickers, stats, etc.
 
-## Deploiement GRATUIT sur Render
+## Deploiement
 
-### Etape 1 : Creer un compte GitHub
-1. Allez sur https://github.com
-2. Créez un compte gratuit
+### Option 1 : Deployer sur Render (recommande)
 
-### Etape 2 : Creer un depot
-1. Cliquez sur "New Repository"
-2. Nommez-le "assistant-bot"
-3. Uploadez tous les fichiers de ce dossier
-
-### Etape 3 : Deployer sur Render
-1. Allez sur https://render.com
-2. Créez un compte gratuit (avec GitHub)
-3. Cliquez sur "New" > "Web Service"
-4. Connectez votre depot GitHub "assistant-bot"
-5. Configuration :
-   - Name: assistant-bot
+1. Fork ce depot GitHub
+2. Allez sur https://render.com
+3. Créez un compte gratuit (avec GitHub)
+4. Cliquez "New" > "Web Service"
+5. Connectez votre fork
+6. Configuration :
+   - Name: avancode
    - Runtime: Node
-   - Build Command: npm install
-   - Start Command: node server.js
-6. Cliquez "Create Web Service"
+   - Node Version: 18+
+   - Build Command: `pnpm install && pnpm build`
+   - Start Command: `pnpm start`
+7. Cliquez "Create Web Service"
 
-### Etape 4 : Utiliser le bot
-1. Ouvrez l'URL fournie par Render (ex: https://assistant-bot-xxxx.onrender.com)
-2. Entrez votre numero WhatsApp
-3. Cliquez "Deployer"
-4. Le code AVANCODE sera envoye automatiquement par WhatsApp
-5. Il sera aussi affiche dans le panneau web avec un compte a rebours de 3 minutes
-6. Pour vous connecter : WhatsApp > Appareils connectes > Connecter avec numero > Collez le code
+### Option 2 : Lancer localement
 
-## Configuration
+```bash
+pnpm install
+pnpm dev       # Developpement
+pnpm build     # Build production
+pnpm start     # Demarrer en production
+pnpm test      # Tests Vitest
+```
 
-Editiez `config.json` pour personnaliser :
-- `prefix` : Prefixe des commandes (defaut: ".")
-- `botNumber` : Numero du bot (avec indicatif)
-- `mode` : "public" ou "private"
-
-## Commandes disponibles
+## Commands disponibles
 
 | Categorie | Commandes |
 |-----------|-----------|
@@ -61,5 +65,13 @@ Editiez `config.json` pour personnaliser :
 | Config | prefix, setname, setdesc, setpp, autoread, autotype, set |
 | Autres | welcome, goodbye, ephemeral, ginfo, linkgroup, menu, list, revoke |
 
+## Configuration
+
+Editez `config.json` pour personnaliser :
+- `prefix` : Prefixe des commandes (defaut: ".")
+- `botNumber` : Numero du bot (avec indicatif)
+- `mode` : "public" ou "private"
+
 ## Auteur
-AVANI_SOUDI - AVANI Tech
+
+2026 AVANI_SOUDI - AVANI Tech
