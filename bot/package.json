@@ -1,0 +1,32 @@
+{
+  "name": "AssistantBot",
+  "version": "1.1.9",
+  "description": "WhatsApp Bot avec IA et APIs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["whatsapp", "bot", "ai"],
+  "author": "AVANI SOUDI",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "axios": "^1.6.0",
+    "clipboardy": "^2.3.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "fs-extra": "^11.1.1",
+    "gtts": "^0.2.1",
+    "jimp": "^1.6.1",
+    "moment-timezone": "^0.6.2",
+    "mumaker": "^2.0.0",
+    "node-fetch": "^2.6.7",
+    "pdfkit": "^0.15.0",
+    "pino": "^10.3.1",
+    "ruhend-scraper": "^7.0.4",
+    "sharp": "^0.35.2",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
