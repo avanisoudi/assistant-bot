@@ -3,440 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AVANCODE - Assistant Bot WhatsApp</title>
+    <title>AVANCODE Panel - Bot Hosting</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0d2137 100%);
-            color: #fff;
-            min-height: 100vh;
-        }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1d23; color: #e0e0e0; min-height: 100vh; display: flex; }
+
+        /* SIDEBAR */
+        .sidebar { width: 60px; background: #12141a; border-right: 1px solid #2a2d35; display: flex; flex-direction: column; align-items: center; padding: 15px 0; position: fixed; height: 100vh; z-index: 10; }
+        .sidebar .logo { font-size: 1.5em; margin-bottom: 30px; cursor: pointer; }
+        .sidebar .nav-item { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 10px; cursor: pointer; font-size: 1.2em; transition: all 0.2s; }
+        .sidebar .nav-item:hover, .sidebar .nav-item.active { background: #25D366; color: #fff; }
+        .sidebar .nav-item.active { box-shadow: 0 0 10px rgba(37,211,102,0.3); }
+
+        /* MAIN */
+        .main { margin-left: 60px; flex: 1; display: flex; flex-direction: column; }
 
         /* HEADER */
-        .header {
-            text-align: center;
-            padding: 40px 20px;
-            background: rgba(37, 211, 102, 0.05);
-            border-radius: 20px;
-            border: 1px solid rgba(37, 211, 102, 0.2);
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            font-size: 2.5em;
-            background: linear-gradient(90deg, #25D366, #00d4aa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 5px;
-        }
-        .header .subtitle {
-            color: #8899aa;
-            font-size: 1.1em;
-        }
-        .header .brand {
-            margin-top: 10px;
-            color: #25D366;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
+        .topbar { background: #1e2128; border-bottom: 1px solid #2a2d35; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h2 { font-size: 1.1em; color: #25D366; }
+        .topbar .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }
+        .topbar .status-badge.online { background: rgba(37,211,102,0.2); color: #25D366; }
+        .topbar .status-badge.offline { background: rgba(220,53,69,0.2); color: #dc3545; }
 
-        /* STATUS BAR */
-        .status-bar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .status-dot {
-            width: 12px; height: 12px;
-            border-radius: 50%;
-            background: #666;
-            animation: none;
-        }
-        .status-dot.online { background: #25D366; animation: pulse 1.5s infinite; }
-        .status-dot.connecting { background: #f0ad4e; animation: pulse 0.8s infinite; }
-        .status-dot.offline { background: #dc3545; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.3); }
-        }
-        .status-text { font-size: 1.1em; font-weight: 500; }
+        /* CONTENT */
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
 
-        /* PAIRING CODE */
-        .pairing-section {
-            display: none;
-            text-align: center;
-            padding: 25px;
-            background: rgba(37, 211, 102, 0.1);
-            border-radius: 15px;
-            border: 2px solid #25D366;
-            margin-bottom: 25px;
-        }
-        .pairing-section.visible { display: block; }
-        .pairing-section h3 { color: #25D366; margin-bottom: 10px; font-size: 1.3em; }
-        .pairing-code {
-            font-size: 3em;
-            font-weight: bold;
-            letter-spacing: 8px;
-            color: #fff;
-            background: rgba(0,0,0,0.3);
-            padding: 15px 30px;
-            border-radius: 10px;
-            display: inline-block;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-        }
-        .pairing-instructions {
-            color: #aab;
-            font-size: 0.9em;
-            margin-top: 10px;
-            line-height: 1.6;
-        }
+        /* PANELS */
+        .panel { background: #1e2128; border: 1px solid #2a2d35; border-radius: 10px; margin-bottom: 20px; }
+        .panel-header { padding: 12px 18px; border-bottom: 1px solid #2a2d35; display: flex; align-items: center; justify-content: space-between; }
+        .panel-header h3 { font-size: 0.95em; color: #aab; }
+        .panel-body { padding: 15px 18px; }
 
-        /* CONTROL PANEL */
-        .panel {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 25px;
-        }
-        .panel h2 {
-            color: #25D366;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #aab;
-            font-size: 0.9em;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.3);
-            color: #fff;
-            font-size: 1em;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        .form-group input:focus {
-            border-color: #25D366;
-        }
-        .form-group input::placeholder { color: #556; }
+        /* BOUTONS */
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.85em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-green { background: #25D366; color: #fff; }
+        .btn-green:hover { background: #1db954; }
+        .btn-red { background: #dc3545; color: #fff; }
+        .btn-red:hover { background: #a71d2a; }
+        .btn-blue { background: #3b82f6; color: #fff; }
+        .btn-blue:hover { background: #2563eb; }
+        .btn-gray { background: #374151; color: #e0e0e0; }
+        .btn-gray:hover { background: #4b5563; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        .btn-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .btn {
-            flex: 1;
-            padding: 14px 20px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .btn-deploy {
-            background: linear-gradient(135deg, #25D366, #128C7E);
-            color: #fff;
-        }
-        .btn-deploy:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(37,211,102,0.3); }
-        .btn-deploy:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-stop {
-            background: linear-gradient(135deg, #dc3545, #a71d2a);
-            color: #fff;
-        }
-        .btn-stop:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(220,53,69,0.3); }
-        .btn-stop:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        /* CONTROLES */
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+        .control-card { background: #252830; border-radius: 8px; padding: 15px; text-align: center; }
+        .control-card .value { font-size: 1.5em; font-weight: bold; color: #25D366; }
+        .control-card .label { font-size: 0.75em; color: #778; margin-top: 5px; }
 
-        /* LOGS */
-        .logs-panel {
-            background: rgba(0,0,0,0.4);
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .logs-panel h2 {
-            color: #25D366;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .logs-container {
-            height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-        }
-        .log-entry {
-            padding: 4px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            line-height: 1.5;
-        }
-        .log-entry .time { color: #556; }
-        .log-entry.info .msg { color: #8899aa; }
-        .log-entry.success .msg { color: #25D366; }
-        .log-entry.error .msg { color: #dc3545; }
-        .log-entry.warn .msg { color: #f0ad4e; }
-        .log-entry.msg .msg { color: #5bc0de; }
+        /* FICHIERS */
+        .file-browser { width: 100%; }
+        .file-path { background: #252830; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; font-family: monospace; font-size: 0.85em; color: #25D366; display: flex; align-items: center; gap: 8px; }
+        .file-path span { cursor: pointer; }
+        .file-path span:hover { text-decoration: underline; }
+        .file-list { list-style: none; }
+        .file-item { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #2a2d35; cursor: pointer; transition: background 0.2s; gap: 10px; }
+        .file-item:hover { background: #252830; }
+        .file-item .icon { font-size: 1.1em; width: 25px; }
+        .file-item .name { flex: 1; font-size: 0.9em; }
+        .file-item .size { font-size: 0.75em; color: #778; }
+        .file-item .actions { opacity: 0; transition: opacity 0.2s; }
+        .file-item:hover .actions { opacity: 1; }
 
-        /* FEATURES */
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .feature-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .feature-card .icon { font-size: 2em; margin-bottom: 10px; }
-        .feature-card h4 { color: #25D366; margin-bottom: 5px; font-size: 0.95em; }
-        .feature-card p { color: #778; font-size: 0.8em; }
+        /* EDITEUR */
+        .editor-container { display: none; }
+        .editor-container.visible { display: block; }
+        .editor-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+        .editor-header .filename { font-family: monospace; color: #25D366; }
+        .editor textarea { width: 100%; height: 400px; background: #0d1117; color: #e0e0e0; border: 1px solid #2a2d35; border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.85em; resize: vertical; outline: none; }
+        .editor textarea:focus { border-color: #25D366; }
 
-        /* FOOTER */
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #556;
-            font-size: 0.85em;
-        }
-        .footer a { color: #25D366; text-decoration: none; }
+        /* CONSOLE */
+        .console { background: #0d1117; border-radius: 8px; padding: 12px; height: 300px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.8em; }
+        .console .log-line { padding: 2px 0; line-height: 1.5; word-break: break-all; }
+        .console .log-line.success { color: #25D366; }
+        .console .log-line.error { color: #dc3545; }
+        .console .log-line.warn { color: #f0ad4e; }
+        .console .log-line.info { color: #8899aa; }
+        .console .log-line.msg { color: #5bc0de; }
+        .console-input { display: flex; gap: 8px; margin-top: 10px; }
+        .console-input input { flex: 1; background: #252830; border: 1px solid #2a2d35; border-radius: 6px; padding: 8px 12px; color: #e0e0e0; font-family: monospace; outline: none; }
+        .console-input input:focus { border-color: #25D366; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 0; margin-bottom: 15px; }
+        .tab { padding: 8px 16px; background: #252830; border: 1px solid #2a2d35; cursor: pointer; font-size: 0.85em; transition: all 0.2s; }
+        .tab:first-child { border-radius: 6px 0 0 6px; }
+        .tab:last-child { border-radius: 0 6px 6px 0; }
+        .tab.active { background: #25D366; color: #fff; border-color: #25D366; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         /* RESPONSIVE */
         @media (max-width: 600px) {
-            .header h1 { font-size: 1.8em; }
-            .pairing-code { font-size: 2em; letter-spacing: 5px; }
-            .btn-row { flex-direction: column; }
-            .features { grid-template-columns: 1fr 1fr; }
+            .sidebar { width: 50px; }
+            .main { margin-left: 50px; }
+            .controls { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- HEADER -->
-        <div class="header">
-            <h1>AVANCODE</h1>
-            <p class="subtitle">Assistant Bot WhatsApp - Panneau de Controle</p>
-            <p class="brand">Par AVANI_SOUDI</p>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">🤖</div>
+        <div class="nav-item active" onclick="showTab('dashboard')" title="Dashboard">📊</div>
+        <div class="nav-item" onclick="showTab('files')" title="Fichiers">📁</div>
+        <div class="nav-item" onclick="showTab('console')" title="Console">💻</div>
+        <div class="nav-item" onclick="showTab('settings')" title="Parametres">⚙️</div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+        <div class="topbar">
+            <h2>AVANCODE Panel</h2>
+            <span class="status-badge offline" id="statusBadge">Hors ligne</span>
         </div>
 
-        <!-- STATUS -->
-        <div class="status-bar">
-            <div class="status-dot" id="statusDot"></div>
-            <span class="status-text" id="statusText">Hors ligne</span>
-        </div>
+        <div class="content">
+            <!-- DASHBOARD -->
+            <div class="tab-content active" id="tab-dashboard">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Controle du Bot</h3>
+                        <div class="btn-row">
+                            <button class="btn btn-green" id="btnStart" onclick="startBot()">Demarrer</button>
+                            <button class="btn btn-red" id="btnStop" onclick="stopBot()" disabled>Arreter</button>
+                            <button class="btn btn-blue" id="btnRestart" onclick="restartBot()" disabled>Redemarrer</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="controls">
+                            <div class="control-card">
+                                <div class="value" id="uptimeValue">0s</div>
+                                <div class="label">Uptime</div>
+                            </div>
+                            <div class="control-card">
+                                <div class="value" id="statusValue">OFF</div>
+                                <div class="label">Statut</div>
+                            </div>
+                            <div class="control-card">
+                                <div class="value" id="memValue">0 MB</div>
+                                <div class="label">RAM</div>
+                            </div>
+                            <div class="control-card">
+                                <div class="value" id="logsCount">0</div>
+                                <div class="label">Logs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- PAIRING CODE -->
-        <div class="pairing-section" id="pairingSection">
-            <h3>Code AVANCODE</h3>
-            <div class="pairing-code" id="pairingCode">--------</div>
-            <p class="pairing-instructions">
-                Ouvrez WhatsApp > Appareils connectes > Connecter un appareil > Connecter avec numero de telephone > Collez ce code
-            </p>
-        </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Logs en temps reel</h3></div>
+                    <div class="panel-body">
+                        <div class="console" id="dashLogs"></div>
+                    </div>
+                </div>
+            </div>
 
-        <!-- CONTROL PANEL -->
-        <div class="panel">
-            <h2>Deploiement du Bot</h2>
-            <div class="form-group">
-                <label>Numero WhatsApp du bot (avec indicatif pays)</label>
-                <input type="text" id="phoneInput" placeholder="Ex: 237651543248" />
-            </div>
-            <div class="btn-row">
-                <button class="btn btn-deploy" id="btnDeploy" onclick="deployBot()">Deployer</button>
-                <button class="btn btn-stop" id="btnStop" onclick="stopBot()" disabled>Arreter</button>
-            </div>
-        </div>
+            <!-- FICHIERS -->
+            <div class="tab-content" id="tab-files">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Gestionnaire de fichiers</h3>
+                        <div class="btn-row">
+                            <button class="btn btn-gray" onclick="createFile()">+ Fichier</button>
+                            <button class="btn btn-gray" onclick="createFolder()">+ Dossier</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="file-path" id="filePath"><span onclick="navigateTo('')">/bot</span></div>
+                        <div class="file-browser">
+                            <ul class="file-list" id="fileList"></ul>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- FEATURES -->
-        <div class="features">
-            <div class="feature-card">
-                <div class="icon">🤖</div>
-                <h4>Bot Intelligent</h4>
-                <p>Gestion automatique des groupes</p>
+                <!-- EDITEUR -->
+                <div class="panel editor-container" id="editorPanel">
+                    <div class="panel-header">
+                        <h3>Editeur - <span class="filename" id="editorFilename"></span></h3>
+                        <div class="btn-row">
+                            <button class="btn btn-green" onclick="saveFile()">Sauvegarder</button>
+                            <button class="btn btn-gray" onclick="closeEditor()">Fermer</button>
+                        </div>
+                    </div>
+                    <div class="panel-body editor">
+                        <textarea id="editorContent" spellcheck="false"></textarea>
+                    </div>
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="icon">🔒</div>
-                <h4>Anti-Spam</h4>
-                <p>Protection contre les spams</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon">📊</div>
-                <h4>Statistiques</h4>
-                <p>Suivi des activites</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon">⚡</div>
-                <h4>Temps Reel</h4>
-                <p>Logs et statut en direct</p>
-            </div>
-        </div>
 
-        <!-- LOGS -->
-        <div class="logs-panel">
-            <h2>Console de Logs</h2>
-            <div class="logs-container" id="logsContainer">
-                <div class="log-entry info"><span class="time">[--:--:--]</span> <span class="msg">En attente de connexion...</span></div>
+            <!-- CONSOLE -->
+            <div class="tab-content" id="tab-console">
+                <div class="panel">
+                    <div class="panel-header"><h3>Terminal</h3></div>
+                    <div class="panel-body">
+                        <div class="console" id="terminalOutput"></div>
+                        <div class="console-input">
+                            <input type="text" id="cmdInput" placeholder="Tapez une commande..." onkeypress="if(event.key==='Enter')runCommand()">
+                            <button class="btn btn-green" onclick="runCommand()">Executer</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <!-- FOOTER -->
-        <div class="footer">
-            <p>AVANCODE v1.0.5 | Assistant Bot WhatsApp</p>
-            <p>2026 AVANI_SOUDI - Tous droits reserves</p>
+            <!-- SETTINGS -->
+            <div class="tab-content" id="tab-settings">
+                <div class="panel">
+                    <div class="panel-header"><h3>Informations du serveur</h3></div>
+                    <div class="panel-body">
+                        <p style="margin-bottom:10px"><strong>Nom:</strong> Assistant Bot - AVANI_SOUDI</p>
+                        <p style="margin-bottom:10px"><strong>Version:</strong> 1.1.9</p>
+                        <p style="margin-bottom:10px"><strong>Runtime:</strong> Node.js</p>
+                        <p style="margin-bottom:10px"><strong>Hebergement:</strong> Render (Gratuit)</p>
+                        <p style="margin-bottom:10px"><strong>Uptime:</strong> 24h/24 (Keep-alive actif)</p>
+                        <p style="margin-bottom:10px"><strong>DNS:</strong> Configurable via Render Dashboard</p>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Actions</h3></div>
+                    <div class="panel-body">
+                        <div class="btn-row">
+                            <button class="btn btn-blue" onclick="runCommand2('npm install')">npm install</button>
+                            <button class="btn btn-gray" onclick="runCommand2('node -v')">Version Node</button>
+                            <button class="btn btn-red" onclick="if(confirm('Supprimer auth_info ?'))runCommand2('rm -rf auth_info')">Reset Auth</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         let ws = null;
+        let currentPath = '';
+        let currentEditFile = '';
+        let uptimeInterval = null;
+        let startedAt = null;
 
-        function connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            ws = new WebSocket(`${protocol}//${window.location.host}`);
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleMessage(data);
-            };
-
-            ws.onclose = () => {
-                setTimeout(connectWebSocket, 3000);
-            };
+        // === TABS ===
+        function showTab(name) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            event.target.classList.add('active');
+            if (name === 'files') loadFiles();
         }
 
-        function handleMessage(data) {
-            switch (data.type) {
-                case 'status':
-                    updateStatus(data.data);
-                    break;
-                case 'log':
-                    addLogEntry(data.data);
-                    break;
-                case 'pairing':
-                    showPairingCode(data.data.code);
-                    break;
-            }
+        // === WEBSOCKET ===
+        function connectWS() {
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${proto}//${location.host}`);
+            ws.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                if (data.type === 'log') appendLog(data.data);
+                if (data.type === 'status') updateStatus(data.data.status);
+            };
+            ws.onclose = () => setTimeout(connectWS, 3000);
         }
 
-        function updateStatus(state) {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            const btnDeploy = document.getElementById('btnDeploy');
+        // === STATUS ===
+        function updateStatus(status) {
+            const badge = document.getElementById('statusBadge');
+            const val = document.getElementById('statusValue');
+            const btnStart = document.getElementById('btnStart');
             const btnStop = document.getElementById('btnStop');
+            const btnRestart = document.getElementById('btnRestart');
 
-            dot.className = 'status-dot ' + state.status;
-
-            switch (state.status) {
-                case 'online':
-                    text.textContent = 'En ligne';
-                    btnDeploy.disabled = true;
-                    btnStop.disabled = false;
-                    document.getElementById('pairingSection').classList.remove('visible');
-                    break;
-                case 'connecting':
-                    text.textContent = 'Connexion en cours...';
-                    btnDeploy.disabled = true;
-                    btnStop.disabled = false;
-                    break;
-                case 'offline':
-                    text.textContent = 'Hors ligne';
-                    btnDeploy.disabled = false;
-                    btnStop.disabled = true;
-                    document.getElementById('pairingSection').classList.remove('visible');
-                    break;
-            }
-
-            if (state.pairingCode) {
-                showPairingCode(state.pairingCode);
+            if (status === 'online') {
+                badge.className = 'status-badge online';
+                badge.textContent = 'En ligne';
+                val.textContent = 'ON';
+                val.style.color = '#25D366';
+                btnStart.disabled = true;
+                btnStop.disabled = false;
+                btnRestart.disabled = false;
+                if (!startedAt) startedAt = Date.now();
+            } else {
+                badge.className = 'status-badge offline';
+                badge.textContent = 'Hors ligne';
+                val.textContent = 'OFF';
+                val.style.color = '#dc3545';
+                btnStart.disabled = false;
+                btnStop.disabled = true;
+                btnRestart.disabled = true;
+                startedAt = null;
             }
         }
 
-        function showPairingCode(code) {
-            document.getElementById('pairingCode').textContent = code;
-            document.getElementById('pairingSection').classList.add('visible');
+        // === LOGS ===
+        function appendLog(log) {
+            const containers = [document.getElementById('dashLogs'), document.getElementById('terminalOutput')];
+            containers.forEach(container => {
+                const line = document.createElement('div');
+                line.className = 'log-line ' + log.level;
+                line.textContent = `[${log.time}] ${log.message}`;
+                container.appendChild(line);
+                container.scrollTop = container.scrollHeight;
+                if (container.children.length > 200) container.removeChild(container.firstChild);
+            });
+            document.getElementById('logsCount').textContent = document.getElementById('dashLogs').children.length;
         }
 
-        function addLogEntry(log) {
-            const container = document.getElementById('logsContainer');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry ' + log.level;
-            entry.innerHTML = `<span class="time">[${log.time}]</span> <span class="msg">${log.message}</span>`;
-            container.appendChild(entry);
-            container.scrollTop = container.scrollHeight;
+        // === BOT CONTROLS ===
+        async function startBot() {
+            const res = await fetch('/api/start', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) alert(data.error);
         }
-
-        async function deployBot() {
-            const phone = document.getElementById('phoneInput').value.trim();
-            if (!phone) {
-                alert('Veuillez entrer un numero de telephone');
-                return;
-            }
-
-            try {
-                const res = await fetch('/api/deploy', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phone })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert('Erreur: ' + data.error);
-                }
-            } catch (error) {
-                alert('Erreur de connexion au serveur');
-            }
-        }
-
         async function stopBot() {
-            try {
-                const res = await fetch('/api/stop', { method: 'POST' });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert('Erreur: ' + data.error);
-                }
-            } catch (error) {
-                alert('Erreur de connexion au serveur');
+            const res = await fetch('/api/stop', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) alert(data.error);
+        }
+        async function restartBot() {
+            const res = await fetch('/api/restart', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) alert(data.error);
+        }
+
+        // === FILES ===
+        async function loadFiles(dir) {
+            if (dir !== undefined) currentPath = dir;
+            const res = await fetch('/api/files?path=' + encodeURIComponent(currentPath));
+            const data = await res.json();
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+
+            // Bouton retour
+            if (currentPath) {
+                const back = document.createElement('li');
+                back.className = 'file-item';
+                back.innerHTML = '<span class="icon">⬆️</span><span class="name">..</span>';
+                back.onclick = () => {
+                    const parts = currentPath.split('/');
+                    parts.pop();
+                    loadFiles(parts.join('/'));
+                };
+                list.appendChild(back);
+            }
+
+            // Mettre a jour le chemin
+            updatePathDisplay();
+
+            data.files.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                const icon = item.type === 'folder' ? '📁' : getFileIcon(item.name);
+                const size = item.type === 'folder' ? '' : formatSize(item.size);
+                li.innerHTML = `<span class="icon">${icon}</span><span class="name">${item.name}</span><span class="size">${size}</span><span class="actions"><button class="btn btn-red" style="padding:3px 8px;font-size:0.7em" onclick="event.stopPropagation();deleteItem('${currentPath ? currentPath + '/' : ''}${item.name}')">X</button></span>`;
+                li.onclick = () => {
+                    if (item.type === 'folder') {
+                        loadFiles(currentPath ? currentPath + '/' + item.name : item.name);
+                    } else {
+                        openFile(currentPath ? currentPath + '/' + item.name : item.name);
+                    }
+                };
+                list.appendChild(li);
+            });
+        }
+
+        function updatePathDisplay() {
+            const pathEl = document.getElementById('filePath');
+            const parts = currentPath.split('/').filter(p => p);
+            let html = '<span onclick="loadFiles(\'\')">/bot</span>';
+            let accumulated = '';
+            parts.forEach(p => {
+                accumulated += (accumulated ? '/' : '') + p;
+                const acc = accumulated;
+                html += ` / <span onclick="loadFiles('${acc}')">${p}</span>`;
+            });
+            pathEl.innerHTML = html;
+        }
+
+        async function openFile(filePath) {
+            const res = await fetch('/api/file?path=' + encodeURIComponent(filePath));
+            if (!res.ok) { alert('Impossible de lire ce fichier'); return; }
+            const data = await res.json();
+            document.getElementById('editorFilename').textContent = filePath;
+            document.getElementById('editorContent').value = data.content;
+            document.getElementById('editorPanel').classList.add('visible');
+            currentEditFile = filePath;
+        }
+
+        async function saveFile() {
+            const content = document.getElementById('editorContent').value;
+            const res = await fetch('/api/file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: currentEditFile, content })
+            });
+            if (res.ok) alert('Fichier sauvegarde !');
+            else alert('Erreur de sauvegarde');
+        }
+
+        function closeEditor() {
+            document.getElementById('editorPanel').classList.remove('visible');
+        }
+
+        async function deleteItem(itemPath) {
+            if (!confirm('Supprimer ' + itemPath + ' ?')) return;
+            await fetch('/api/file?path=' + encodeURIComponent(itemPath), { method: 'DELETE' });
+            loadFiles();
+        }
+
+        function createFile() {
+            const name = prompt('Nom du fichier:');
+            if (!name) return;
+            const filePath = currentPath ? currentPath + '/' + name : name;
+            fetch('/api/file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: filePath, content: '' })
+            }).then(() => loadFiles());
+        }
+
+        function createFolder() {
+            const name = prompt('Nom du dossier:');
+            if (!name) return;
+            const folderPath = currentPath ? currentPath + '/' + name : name;
+            fetch('/api/folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: folderPath })
+            }).then(() => loadFiles());
+        }
+
+        // === CONSOLE ===
+        async function runCommand() {
+            const input = document.getElementById('cmdInput');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+            input.value = '';
+            appendLog({ time: new Date().toLocaleTimeString(), level: 'info', message: '$ ' + cmd });
+            const res = await fetch('/api/console', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: cmd })
+            });
+            const data = await res.json();
+            if (data.output) {
+                appendLog({ time: new Date().toLocaleTimeString(), level: 'info', message: data.output.trim() });
             }
         }
 
-        // Charger le statut initial
-        async function loadStatus() {
+        async function runCommand2(cmd) {
+            appendLog({ time: new Date().toLocaleTimeString(), level: 'info', message: '$ ' + cmd });
+            const res = await fetch('/api/console', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: cmd })
+            });
+            const data = await res.json();
+            if (data.output) {
+                appendLog({ time: new Date().toLocaleTimeString(), level: 'info', message: data.output.trim() });
+            }
+        }
+
+        // === UTILS ===
+        function getFileIcon(name) {
+            const ext = name.split('.').pop().toLowerCase();
+            const icons = { js: '📜', json: '📋', md: '📝', txt: '📄', jpg: '🖼️', png: '🖼️', html: '🌐', css: '🎨' };
+            return icons[ext] || '📄';
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // === UPTIME COUNTER ===
+        setInterval(() => {
+            if (startedAt) {
+                const secs = Math.floor((Date.now() - startedAt) / 1000);
+                const h = Math.floor(secs / 3600);
+                const m = Math.floor((secs % 3600) / 60);
+                const s = secs % 60;
+                document.getElementById('uptimeValue').textContent = h > 0 ? `${h}h${m}m` : m > 0 ? `${m}m${s}s` : `${s}s`;
+            }
+        }, 1000);
+
+        // === LOAD STATUS ===
+        async function loadInitial() {
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
-                updateStatus(data);
-                data.logs.forEach(log => addLogEntry(log));
-            } catch (e) {}
+                updateStatus(data.status);
+                if (data.uptime > 0) startedAt = Date.now() - (data.uptime * 1000);
+                const mem = Math.round((data.memory?.rss || 0) / 1024 / 1024);
+                document.getElementById('memValue').textContent = mem + ' MB';
+                data.logs.forEach(log => appendLog(log));
+            } catch(e) {}
         }
 
-        // Initialisation
-        connectWebSocket();
-        loadStatus();
+        // INIT
+        connectWS();
+        loadInitial();
+        loadFiles('');
     </script>
 </body>
 </html>

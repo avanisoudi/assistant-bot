@@ -2,197 +2,259 @@ const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const path = require('path');
-const fs = require('fs');
-const { makeWASocket, useMultiFileAuthState, DisconnectReason, delay } = require('@whiskeysockets/baileys');
-const pino = require('pino');
+const fs = require('fs-extra');
+const { spawn } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const PORT = process.env.PORT || 3000;
-const AUTH_DIR = path.join(__dirname, 'auth_info');
+const BOT_DIR = path.join(__dirname, 'bot');
 
 // État du bot
 let botState = {
-    status: 'offline', // offline, connecting, online
-    pairingCode: null,
-    phoneNumber: null,
-    logs: []
+    status: 'offline',
+    logs: [],
+    uptime: null,
+    startedAt: null
 };
-let sock = null;
+let botProcess = null;
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// === API ROUTES ===
-
-// Statut du bot
+// === API: STATUT ===
 app.get('/api/status', (req, res) => {
     res.json({
         status: botState.status,
-        pairingCode: botState.pairingCode,
-        phoneNumber: botState.phoneNumber,
-        logs: botState.logs.slice(-50)
+        logs: botState.logs.slice(-100),
+        uptime: botState.startedAt ? Math.floor((Date.now() - botState.startedAt) / 1000) : 0,
+        memory: process.memoryUsage()
     });
 });
 
-// Déployer le bot
-app.post('/api/deploy', async (req, res) => {
-    const { phoneNumber } = req.body;
-    if (!phoneNumber) {
-        return res.status(400).json({ error: 'Numéro de téléphone requis' });
+// === API: DÉMARRER LE BOT ===
+app.post('/api/start', (req, res) => {
+    if (botProcess) {
+        return res.status(400).json({ error: 'Le bot est deja en cours' });
     }
 
-    if (botState.status === 'online' || botState.status === 'connecting') {
-        return res.status(400).json({ error: 'Le bot est déjà en cours de connexion ou en ligne' });
+    const indexPath = path.join(BOT_DIR, 'index.js');
+    if (!fs.existsSync(indexPath)) {
+        return res.status(400).json({ error: 'Fichier index.js introuvable dans /bot' });
     }
-
-    botState.phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
-    botState.status = 'connecting';
-    botState.pairingCode = null;
-    addLog('info', 'Démarrage de la connexion...');
-    broadcast({ type: 'status', data: botState });
 
     try {
-        await startBot();
-        res.json({ success: true, message: 'Connexion en cours...' });
+        botProcess = spawn('node', ['index.js'], {
+            cwd: BOT_DIR,
+            env: { ...process.env, NODE_ENV: 'production' }
+        });
+
+        botState.status = 'online';
+        botState.startedAt = Date.now();
+        addLog('success', 'Bot demarre avec succes !');
+        broadcast({ type: 'status', data: { status: 'online' } });
+
+        botProcess.stdout.on('data', (data) => {
+            const lines = data.toString().split('\n').filter(l => l.trim());
+            lines.forEach(line => addLog('info', line));
+        });
+
+        botProcess.stderr.on('data', (data) => {
+            const lines = data.toString().split('\n').filter(l => l.trim());
+            lines.forEach(line => addLog('error', line));
+        });
+
+        botProcess.on('close', (code) => {
+            botProcess = null;
+            botState.status = 'offline';
+            botState.startedAt = null;
+            addLog('warn', `Bot arrete (code: ${code})`);
+            broadcast({ type: 'status', data: { status: 'offline' } });
+        });
+
+        res.json({ success: true, message: 'Bot demarre' });
     } catch (error) {
-        addLog('error', 'Erreur: ' + error.message);
-        botState.status = 'offline';
-        broadcast({ type: 'status', data: botState });
         res.status(500).json({ error: error.message });
     }
 });
 
-// Arrêter le bot
+// === API: ARRÊTER LE BOT ===
 app.post('/api/stop', (req, res) => {
-    try {
-        if (sock) {
-            sock.end();
-            sock = null;
-        }
+    if (!botProcess) {
+        return res.status(400).json({ error: 'Le bot n\'est pas en cours' });
+    }
+    botProcess.kill('SIGTERM');
+    botProcess = null;
+    botState.status = 'offline';
+    botState.startedAt = null;
+    addLog('info', 'Bot arrete par l\'utilisateur.');
+    broadcast({ type: 'status', data: { status: 'offline' } });
+    res.json({ success: true, message: 'Bot arrete' });
+});
+
+// === API: REDÉMARRER LE BOT ===
+app.post('/api/restart', async (req, res) => {
+    if (botProcess) {
+        botProcess.kill('SIGTERM');
+        botProcess = null;
+        await new Promise(r => setTimeout(r, 2000));
+    }
+    addLog('info', 'Redemarrage du bot...');
+    // Simuler un POST vers /api/start
+    const indexPath = path.join(BOT_DIR, 'index.js');
+    if (!fs.existsSync(indexPath)) {
+        return res.status(400).json({ error: 'Fichier index.js introuvable' });
+    }
+    botProcess = spawn('node', ['index.js'], {
+        cwd: BOT_DIR,
+        env: { ...process.env, NODE_ENV: 'production' }
+    });
+    botState.status = 'online';
+    botState.startedAt = Date.now();
+    addLog('success', 'Bot redemarre !');
+    broadcast({ type: 'status', data: { status: 'online' } });
+
+    botProcess.stdout.on('data', (data) => {
+        data.toString().split('\n').filter(l => l.trim()).forEach(line => addLog('info', line));
+    });
+    botProcess.stderr.on('data', (data) => {
+        data.toString().split('\n').filter(l => l.trim()).forEach(line => addLog('error', line));
+    });
+    botProcess.on('close', (code) => {
+        botProcess = null;
         botState.status = 'offline';
-        botState.pairingCode = null;
-        addLog('info', 'Bot arrêté.');
-        broadcast({ type: 'status', data: botState });
-        res.json({ success: true, message: 'Bot arrêté' });
+        botState.startedAt = null;
+        addLog('warn', `Bot arrete (code: ${code})`);
+        broadcast({ type: 'status', data: { status: 'offline' } });
+    });
+
+    res.json({ success: true, message: 'Bot redemarre' });
+});
+
+// === API: LISTE DES FICHIERS ===
+app.get('/api/files', (req, res) => {
+    const dir = req.query.path || '';
+    const fullPath = path.join(BOT_DIR, dir);
+
+    if (!fs.existsSync(fullPath)) {
+        return res.json({ files: [] });
+    }
+
+    try {
+        const items = fs.readdirSync(fullPath).map(name => {
+            const itemPath = path.join(fullPath, name);
+            const stat = fs.statSync(itemPath);
+            return {
+                name,
+                type: stat.isDirectory() ? 'folder' : 'file',
+                size: stat.size,
+                modified: stat.mtime
+            };
+        });
+        // Trier: dossiers d'abord, puis fichiers
+        items.sort((a, b) => {
+            if (a.type === b.type) return a.name.localeCompare(b.name);
+            return a.type === 'folder' ? -1 : 1;
+        });
+        res.json({ files: items, currentPath: dir });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// === FONCTIONS BOT ===
+// === API: LIRE UN FICHIER ===
+app.get('/api/file', (req, res) => {
+    const filePath = req.query.path || '';
+    const fullPath = path.join(BOT_DIR, filePath);
 
-let pairingAttempts = 0;
-let pairingInterval = null;
-let waitingForPairing = false;
-
-async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-
-    sock = makeWASocket({
-        auth: state,
-        printQRInTerminal: false,
-        logger: pino({ level: 'silent' }),
-        browser: ['AVANCODE', 'Chrome', '120.0.0'],
-        connectTimeoutMs: 120000
-    });
-
-    // Pairing Code - avec retry automatique pendant 10 minutes
-    if (!sock.authState.creds.registered) {
-        waitingForPairing = true;
-        await delay(5000);
-        await requestPairingWithRetry();
+    if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) {
+        return res.status(404).json({ error: 'Fichier introuvable' });
     }
 
-    // Sauvegarde credentials
-    sock.ev.on('creds.update', saveCreds);
-
-    // Connexion
-    sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
-
-        if (connection === 'open') {
-            botState.status = 'online';
-            botState.pairingCode = null;
-            waitingForPairing = false;
-            pairingAttempts = 0;
-            if (pairingInterval) { clearInterval(pairingInterval); pairingInterval = null; }
-            addLog('success', 'Bot connecte avec succes !');
-            broadcast({ type: 'status', data: botState });
-        }
-
-        if (connection === 'close') {
-            const statusCode = lastDisconnect?.error?.output?.statusCode;
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-
-            // Si on attend le pairing, ne pas se reconnecter en boucle
-            if (waitingForPairing && pairingAttempts < 10) {
-                addLog('info', 'En attente du code AVANCODE... (ne fermez pas)');
-                botState.status = 'connecting';
-                broadcast({ type: 'status', data: botState });
-                setTimeout(() => startBot(), 15000);
-            } else if (shouldReconnect && botState.status !== 'offline' && !waitingForPairing) {
-                addLog('warn', 'Deconnexion, reconnexion dans 10s...');
-                botState.status = 'connecting';
-                broadcast({ type: 'status', data: botState });
-                setTimeout(() => startBot(), 10000);
-            } else {
-                botState.status = 'offline';
-                botState.pairingCode = null;
-                waitingForPairing = false;
-                if (pairingInterval) { clearInterval(pairingInterval); pairingInterval = null; }
-                addLog('info', 'Bot deconnecte.');
-                broadcast({ type: 'status', data: botState });
-            }
-        }
-    });
-
-    // Messages reçus
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        for (const msg of messages) {
-            if (!msg.key.fromMe && msg.message) {
-                const sender = msg.key.remoteJid;
-                const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
-                if (text) {
-                    addLog('msg', `${sender.split('@')[0]}: ${text.substring(0, 50)}`);
-                }
-            }
-        }
-    });
-}
-
-async function requestPairingWithRetry() {
-    pairingAttempts++;
-    addLog('info', `Demande du code AVANCODE... (tentative ${pairingAttempts}/10)`);
     try {
-        const code = await sock.requestPairingCode(botState.phoneNumber);
-        botState.pairingCode = code;
-        const timeLeft = Math.max(1, 10 - pairingAttempts);
-        addLog('success', `Code AVANCODE: ${code}`);
-        addLog('info', `Vous avez ~${timeLeft} min pour entrer ce code dans WhatsApp`);
-        addLog('info', 'WhatsApp > Appareils connectes > Connecter avec numero');
-        broadcast({ type: 'pairing', data: { code } });
-        broadcast({ type: 'status', data: botState });
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        res.json({ content, path: filePath });
     } catch (error) {
-        addLog('error', 'Erreur pairing: ' + error.message);
-        if (pairingAttempts < 10) {
-            addLog('info', 'Nouvelle tentative dans 60 secondes...');
-        }
-        broadcast({ type: 'status', data: botState });
+        res.status(500).json({ error: 'Impossible de lire ce fichier' });
     }
-}
+});
+
+// === API: SAUVEGARDER UN FICHIER ===
+app.post('/api/file', (req, res) => {
+    const { path: filePath, content } = req.body;
+    const fullPath = path.join(BOT_DIR, filePath);
+
+    try {
+        fs.ensureDirSync(path.dirname(fullPath));
+        fs.writeFileSync(fullPath, content, 'utf-8');
+        res.json({ success: true, message: 'Fichier sauvegarde' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// === API: SUPPRIMER UN FICHIER ===
+app.delete('/api/file', (req, res) => {
+    const filePath = req.query.path || '';
+    const fullPath = path.join(BOT_DIR, filePath);
+
+    if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({ error: 'Fichier introuvable' });
+    }
+
+    try {
+        fs.removeSync(fullPath);
+        res.json({ success: true, message: 'Supprime' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// === API: CRÉER UN DOSSIER ===
+app.post('/api/folder', (req, res) => {
+    const { path: folderPath } = req.body;
+    const fullPath = path.join(BOT_DIR, folderPath);
+
+    try {
+        fs.ensureDirSync(fullPath);
+        res.json({ success: true, message: 'Dossier cree' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// === API: CONSOLE (exécuter une commande) ===
+app.post('/api/console', (req, res) => {
+    const { command } = req.body;
+    if (!command) return res.status(400).json({ error: 'Commande vide' });
+
+    const child = spawn('sh', ['-c', command], { cwd: BOT_DIR, timeout: 30000 });
+    let output = '';
+
+    child.stdout.on('data', (data) => { output += data.toString(); });
+    child.stderr.on('data', (data) => { output += data.toString(); });
+    child.on('close', (code) => {
+        addLog('info', `$ ${command}`);
+        if (output.trim()) addLog('info', output.trim().substring(0, 500));
+        res.json({ output, code });
+    });
+});
+
+// === KEEP ALIVE (empêche Render de dormir) ===
+setInterval(() => {
+    const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    require('http').get(url + '/api/status');
+}, 14 * 60 * 1000); // Ping toutes les 14 minutes
 
 // === WEBSOCKET ===
-
 function broadcast(data) {
     const message = JSON.stringify(data);
     wss.clients.forEach(client => {
-        if (client.readyState === 1) {
-            client.send(message);
-        }
+        if (client.readyState === 1) client.send(message);
     });
 }
 
@@ -200,27 +262,23 @@ function addLog(level, message) {
     const log = {
         time: new Date().toLocaleTimeString('fr-FR'),
         level,
-        message
+        message: message.substring(0, 500)
     };
     botState.logs.push(log);
-    if (botState.logs.length > 200) botState.logs.shift();
+    if (botState.logs.length > 500) botState.logs.shift();
     broadcast({ type: 'log', data: log });
-    console.log(`[${log.time}] [${level}] ${message}`);
 }
 
 wss.on('connection', (ws) => {
-    // Envoyer l'état actuel au nouveau client
-    ws.send(JSON.stringify({ type: 'status', data: botState }));
-    botState.logs.slice(-30).forEach(log => {
+    ws.send(JSON.stringify({ type: 'status', data: { status: botState.status } }));
+    botState.logs.slice(-50).forEach(log => {
         ws.send(JSON.stringify({ type: 'log', data: log }));
     });
 });
 
 // === DÉMARRAGE ===
-
 server.listen(PORT, () => {
-    console.log(`\n╔══════════════════════════════════════╗`);
-    console.log(`║   🤖 AVANCODE - Assistant Bot Panel  ║`);
-    console.log(`║   🌐 http://localhost:${PORT}          ║`);
-    console.log(`╚══════════════════════════════════════╝\n`);
+    console.log(`AVANCODE Panel - http://localhost:${PORT}`);
+    addLog('success', 'Panneau de controle demarre.');
+    addLog('info', 'Pret a deployer votre bot.');
 });
