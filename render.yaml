@@ -1,9 +1,17 @@
 services:
   - type: web
-    name: assistant-bot-panel
+    name: assistant-bot-pairing
     runtime: node
+    plan: free
     buildCommand: npm install
-    startCommand: node server.js
+    startCommand: npm start
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
+      - key: BOT_AUTH_DIR
+        value: bot/auth_info
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
