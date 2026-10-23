@@ -18,7 +18,9 @@ const COOKIE_NAME = 'assistant_bot_admin';
 let botProcess = null;
 let botState = { status: 'offline', connection: 'offline', pairingCode: null, pairingIssuedAt: null, startedAt: null, logs: [] };
 
-function broadcast(data) { const payload = JSON.stringify(data); for (const client of wss.clients) if (client.readyState === 1) client.send(payload); }
+function sanitizePublicLog(log) { return { ...log, message: String(log.message || '').replace(/PAIRING_CODE:[A-Z0-9-]+/ig, 'PAIRING_CODE:[masqué]').replace(/(pairing code|code de jumelage)\s*[:=]?\s*[A-Z0-9-]{4,}/ig, '$1 [masqué]') }; }
+function safePublicState() { const state = publicState(); return { ...state, pairingCode: null, pairingIssuedAt: null, memory: undefined, logs: state.logs.map(sanitizePublicLog) }; }
+function broadcast(data) { if (data.type === 'pairing') return; const safe = data.type === 'status' ? { ...data, data: safePublicState() } : data.type === 'log' ? { ...data, data: sanitizePublicLog(data.data) } : data; const payload = JSON.stringify(safe); for (const client of wss.clients) if (client.readyState === 1) client.send(payload); }
 function addLog(level, message) { const log = { time: new Date().toISOString(), level, message: String(message).slice(0, 1000) }; botState.logs.push(log); if (botState.logs.length > 500) botState.logs.shift(); broadcast({ type: 'log', data: log }); }
 function publicState() { return { ...botState, logs: botState.logs.slice(-100), uptime: botState.startedAt ? Math.floor((Date.now() - botState.startedAt) / 1000) : 0, memory: process.memoryUsage().rss }; }
 function safeRelative(input = '') { const value = String(input).replace(/\\/g, '/').replace(/^\/+/, ''); const target = path.resolve(BOT_DIR, value); if (target !== BOT_DIR && !target.startsWith(BOT_DIR + path.sep)) throw new Error('Chemin refusé'); return target; }
@@ -35,7 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.post('/api/login', (req, res) => { if (!ADMIN_PASSWORD || typeof req.body.password !== 'string' || req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Mot de passe administrateur invalide' }); const token = encodeURIComponent('admin.' + sign('admin')); res.setHeader('Set-Cookie', `${COOKIE_NAME}=${token}; HttpOnly; SameSite=Strict; Path=/; Secure`); res.json({ success: true }); });
 app.post('/api/logout', (req, res) => { res.setHeader('Set-Cookie', `${COOKIE_NAME}=; Max-Age=0; HttpOnly; SameSite=Strict; Path=/; Secure`); res.json({ success: true }); });
 app.get('/api/me', (req, res) => res.json({ authenticated: isAuthenticated(req) }));
-app.get('/api/status', requireAuth, (req, res) => res.json(publicState()));
+app.get('/api/status', (req, res) => res.json(safePublicState()));
 app.post('/api/start', requireAuth, (req, res) => { try { res.json({ success: startBot(), state: publicState() }); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/stop', requireAuth, (req, res) => res.json({ success: stopBot(), state: publicState() }));
 app.post('/api/restart', requireAuth, (req, res) => { stopBot(); setTimeout(() => { try { startBot(); } catch (e) { addLog('error', e.message); } }, 800); res.json({ success: true }); });
@@ -46,7 +48,7 @@ app.get('/api/file', requireAuth, (req, res) => { try { const full = safeRelativ
 app.post('/api/file', requireAuth, (req, res) => { try { if (typeof req.body.path !== 'string' || typeof req.body.content !== 'string') throw new Error('Données invalides'); const full = safeRelative(req.body.path); fs.ensureDirSync(path.dirname(full)); fs.writeFileSync(full, req.body.content, 'utf8'); addLog('info', `Fichier modifié: ${req.body.path}`); res.json({ success: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
 app.post('/api/folder', requireAuth, (req, res) => { try { fs.ensureDirSync(safeRelative(req.body.path)); res.json({ success: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
 app.delete('/api/file', requireAuth, (req, res) => { try { fs.removeSync(safeRelative(req.query.path)); res.json({ success: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
-wss.on('connection', ws => { ws.send(JSON.stringify({ type: 'status', data: publicState() })); botState.logs.slice(-50).forEach(log => ws.send(JSON.stringify({ type: 'log', data: log }))); });
+wss.on('connection', ws => { ws.send(JSON.stringify({ type: 'status', data: safePublicState() })); botState.logs.slice(-50).map(sanitizePublicLog).forEach(log => ws.send(JSON.stringify({ type: 'log', data: log }))); });
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 server.listen(PORT, '0.0.0.0', () => addLog('success', `Assistant Bot Pairing prêt sur le port ${PORT}.`));
 process.on('SIGTERM', () => { stopBot(); server.close(() => process.exit(0)); });
