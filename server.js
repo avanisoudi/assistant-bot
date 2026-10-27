@@ -48,6 +48,86 @@ app.get('/api/file', requireAuth, (req, res) => { try { const full = safeRelativ
 app.post('/api/file', requireAuth, (req, res) => { try { if (typeof req.body.path !== 'string' || typeof req.body.content !== 'string') throw new Error('Données invalides'); const full = safeRelative(req.body.path); fs.ensureDirSync(path.dirname(full)); fs.writeFileSync(full, req.body.content, 'utf8'); addLog('info', `Fichier modifié: ${req.body.path}`); res.json({ success: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
 app.post('/api/folder', requireAuth, (req, res) => { try { fs.ensureDirSync(safeRelative(req.body.path)); res.json({ success: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
 app.delete('/api/file', requireAuth, (req, res) => { try { fs.removeSync(safeRelative(req.query.path)); res.json({ success: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
+
+/* ------------------------------------------------------------------ Groupes
+   Le panneau ne parle pas à WhatsApp : le bot publie ses groupes réels dans
+   PANEL_DATA_DIR/groups.json (voir bridge/panel-bridge.js) et le panneau y
+   dépose ses commandes. La vue publique ne montre que le nécessaire — jamais
+   de code d'invitation pour un groupe privé, jamais l'identifiant interne. */
+const PANEL_DATA_DIR = path.resolve(process.env.PANEL_DATA_DIR || path.join(BOT_DIR, 'data'));
+const GROUPS_FILE = path.join(PANEL_DATA_DIR, 'groups.json');
+const GROUPS_REFRESH_FILE = path.join(PANEL_DATA_DIR, 'groups-refresh.request');
+const GROUP_COMMANDS_DIR = path.join(PANEL_DATA_DIR, 'panel-commands');
+const BRIDGE_SOURCE = path.join(__dirname, 'bridge', 'panel-bridge.js');
+const BRIDGE_TARGET = path.join(BOT_DIR, 'panel-bridge.js');
+const BRIDGE_SNIPPET = "// dans bot/index.js, quand la connexion s'ouvre :\nrequire('./panel-bridge').attachPanelBridge(sock)";
+const GROUP_ACTIONS = new Set(['refresh', 'create', 'rename', 'describe', 'invite', 'leave', 'add', 'remove', 'promote', 'demote']);
+function readJsonSafe(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; } }
+function normalizeGroup(raw = {}) {
+  const jid = String(raw.jid || raw.id || '');
+  const participants = Array.isArray(raw.participants) ? raw.participants : [];
+  const inviteCode = raw.inviteCode || raw.invite_code || null;
+  const role = raw.role || (raw.isOwner ? 'owner' : raw.isAdmin ? 'admin' : 'member');
+  return {
+    jid,
+    name: String(raw.subject || raw.name || 'Groupe sans nom'),
+    privacy: (raw.privacy || (raw.announce ? 'private' : 'public')) === 'private' ? 'private' : 'public',
+    members: Number(raw.size ?? raw.members ?? participants.length ?? 0) || 0,
+    role: ['owner', 'admin', 'member'].includes(role) ? role : 'member',
+    description: String(raw.description || raw.desc || ''),
+    avatarUrl: raw.avatarUrl || raw.profilePic || null,
+    coverUrl: raw.coverUrl || null,
+    inviteCode: inviteCode ? String(inviteCode) : null,
+    inviteUrl: inviteCode ? `https://chat.whatsapp.com/${inviteCode}` : null,
+    isCommunity: Boolean(raw.isCommunity),
+    createdAt: raw.creation || raw.createdAt || null,
+  };
+}
+function normalizeInvite(raw = {}) {
+  return { jid: String(raw.jid || raw.id || ''), name: String(raw.subject || raw.name || 'Invitation'), invitedBy: raw.invitedBy || raw.inviter || null, createdAt: raw.createdAt || raw.timestamp || null };
+}
+function groupState() {
+  const raw = readJsonSafe(GROUPS_FILE);
+  const groups = Array.isArray(raw && raw.groups) ? raw.groups.map(normalizeGroup).filter(group => group.jid) : [];
+  const invitations = Array.isArray(raw && raw.invitations) ? raw.invitations.map(normalizeInvite).filter(item => item.jid) : [];
+  const updatedAt = (raw && (raw.updatedAt || raw.updated_at)) || null;
+  return {
+    available: Array.isArray(raw && raw.groups),
+    source: (raw && raw.source) || null,
+    error: (raw && raw.error) || null,
+    updatedAt,
+    stale: updatedAt ? Date.now() - Date.parse(updatedAt) > 120000 : true,
+    groups,
+    invitations,
+    bridge: { installed: fs.existsSync(BRIDGE_TARGET), sourceAvailable: fs.existsSync(BRIDGE_SOURCE), target: path.relative(__dirname, BRIDGE_TARGET), snippet: BRIDGE_SNIPPET, dataDir: path.relative(__dirname, PANEL_DATA_DIR) },
+  };
+}
+function publicGroupState() {
+  const state = groupState();
+  return {
+    available: state.available,
+    source: state.source,
+    updatedAt: state.updatedAt,
+    stale: state.stale,
+    groups: state.groups.map(group => ({
+      name: group.name, privacy: group.privacy, members: group.members, role: group.role,
+      description: group.description, avatarUrl: group.avatarUrl, coverUrl: group.coverUrl,
+      isCommunity: group.isCommunity,
+      // Un groupe public est public : son invitation peut être partagée. Un groupe privé, non.
+      inviteUrl: group.privacy === 'public' ? group.inviteUrl : null,
+    })),
+    invitations: [],
+    bridge: { installed: state.bridge.installed },
+  };
+}
+app.get('/api/groups/public', (req, res) => res.json(publicGroupState()));
+app.get('/api/groups', requireAuth, (req, res) => res.json(groupState()));
+app.get('/api/groups/bridge', requireAuth, (req, res) => res.json(groupState().bridge));
+app.post('/api/groups/bridge/install', requireAuth, (req, res) => { try { if (!fs.existsSync(BRIDGE_SOURCE)) throw new Error('bridge/panel-bridge.js introuvable dans le panneau'); fs.ensureDirSync(BOT_DIR); fs.copySync(BRIDGE_SOURCE, BRIDGE_TARGET); addLog('success', `Pont groupes installé : ${path.relative(__dirname, BRIDGE_TARGET)}`); res.json({ success: true, ...groupState().bridge }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/groups/refresh', requireAuth, (req, res) => { try { fs.ensureDirSync(PANEL_DATA_DIR); fs.writeFileSync(GROUPS_REFRESH_FILE, new Date().toISOString(), 'utf8'); const id = crypto.randomUUID(); fs.ensureDirSync(GROUP_COMMANDS_DIR); fs.writeJsonSync(path.join(GROUP_COMMANDS_DIR, id + '.json'), { id, action: 'refresh', params: {}, requestedAt: new Date().toISOString() }); addLog('info', 'Rafraîchissement des groupes demandé au bot.'); res.json({ success: true, id }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/groups/command', requireAuth, (req, res) => { try { const action = String((req.body && req.body.action) || ''); if (!GROUP_ACTIONS.has(action)) throw new Error('Action inconnue'); const id = crypto.randomUUID(); const params = req.body && typeof req.body.params === 'object' && req.body.params ? req.body.params : {}; fs.ensureDirSync(GROUP_COMMANDS_DIR); fs.writeJsonSync(path.join(GROUP_COMMANDS_DIR, id + '.json'), { id, action, params, requestedAt: new Date().toISOString() }); addLog('info', `Commande groupes transmise au bot : ${action}`); res.json({ id, action }); } catch (e) { res.status(400).json({ error: e.message }); } });
+app.get('/api/groups/command/:id', requireAuth, (req, res) => { const id = String(req.params.id || '').replace(/[^a-zA-Z0-9-]/g, ''); const request = readJsonSafe(path.join(GROUP_COMMANDS_DIR, id + '.json')); const result = readJsonSafe(path.join(GROUP_COMMANDS_DIR, id + '.result.json')); if (result) return res.json({ ...result, id }); if (!request) return res.status(404).json({ error: 'Commande inconnue', id }); const age = Date.now() - Date.parse(request.requestedAt || 0); res.json({ id, action: request.action, status: age > 45000 ? 'timeout' : 'pending', age }); });
+
 wss.on('connection', ws => { ws.send(JSON.stringify({ type: 'status', data: safePublicState() })); botState.logs.slice(-50).map(sanitizePublicLog).forEach(log => ws.send(JSON.stringify({ type: 'log', data: log }))); });
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 server.listen(PORT, '0.0.0.0', () => addLog('success', `Assistant Bot Pairing prêt sur le port ${PORT}.`));
