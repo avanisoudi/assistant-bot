@@ -96,7 +96,7 @@
 @media(max-width:640px){.gfb{padding:12px}.gfb-head{flex-direction:column;align-items:stretch}.gfb-search{flex:1 1 auto}.gfb-grid{grid-template-columns:1fr 1fr}}
 </style></head><body>
 <div id="login" class="login hidden" aria-hidden="true"></div>
-<div id="app" class="shell"><aside class="side"><div class="brand">Assistant Bot <span>Pairing</span></div><nav><button class="active" onclick="tab('dashboard',this)">Tableau de bord</button><button onclick="tab('groups',this)">Groupes</button><button id="navFiles" class="hidden" onclick="tab('files',this)">Fichiers du bot</button><button id="navSettings" class="hidden" onclick="tab('settings',this)">Paramètres</button></nav><p id="modeNote" class="muted" style="font-size:12px;margin-top:18px">Vue publique · lecture seule</p><button id="logoutBtn" class="hidden" style="margin-top:12px;width:100%" onclick="logout()">Déconnexion</button></aside><main class="main"><div class="top"><div><h1 id="title">Tableau de bord</h1><p class="muted">Gestion réelle de votre instance WhatsApp</p></div><span id="badge" class="badge">Hors ligne</span></div>
+<div id="app" class="shell"><aside class="side"><div class="brand">Assistant Bot <span>Pairing</span></div><nav><button class="active" onclick="tab('dashboard',this)">Tableau de bord</button><button onclick="tab('groups',this)">Groupes</button><button id="navFiles" class="hidden" onclick="tab('files',this)">Fichiers du bot</button><button id="navSettings" class="hidden" onclick="tab('settings',this)">Paramètres</button></nav><p id="modeNote" class="muted" style="font-size:12px;margin-top:18px">Vue publique · lecture seule</p><button id="loginBtn" style="margin-top:12px;width:100%;background:transparent;color:var(--muted);font-weight:600" onclick="openAdminLogin()">Connexion administrateur</button><button id="logoutBtn" class="hidden" style="margin-top:12px;width:100%" onclick="logout()">Déconnexion</button></aside><main class="main"><div class="top"><div><h1 id="title">Tableau de bord</h1><p class="muted">Gestion réelle de votre instance WhatsApp</p></div><span id="badge" class="badge">Hors ligne</span></div>
 <section id="dashboard" class="page"><div class="grid"><div class="card"><div class="muted">Processus</div><div id="status" class="metric">OFF</div></div><div class="card"><div class="muted">Connexion WhatsApp</div><div id="connection" class="metric">—</div></div><div class="card"><div class="muted">Uptime</div><div id="uptime" class="metric">0 s</div></div><div class="card"><div class="muted">Mémoire</div><div id="memory" class="metric">0 MB</div></div><div class="card wide"><h3>État du service</h3><p class="muted">Cette page est publique. Les commandes d’administration et les données de jumelage restent protégées.</p></div><div id="pairCard" class="card wide hidden"><h3>Pairing code WhatsApp</h3><div class="pair"><div><div class="muted">Code généré en temps réel par le bot</div><div id="pairCode" class="code">—</div><small class="muted">WhatsApp → Appareils connectés → Connecter avec un numéro</small></div><button class="primary" onclick="copyCode()">Copier le code</button></div></div><div class="card wide"><h3>Logs en temps réel</h3><div id="logs" class="logs"></div></div></div></section>
 
 <section id="groups" class="page hidden"><div class="gfb">
@@ -134,7 +134,7 @@
 <section id="settings" class="page hidden"><div class="card"><h3>Configuration</h3><p><b>Plateforme :</b> Assistant Bot Pairing</p><p><b>Bot :</b> AssistantBot V1.2.2 fourni par l’administrateur</p><p><b>Exécution :</b> Node.js + Baileys</p><p><b>Stockage session :</b> <code>BOT_AUTH_DIR</code> (à placer sur un disque persistant Render)</p><p><b>Groupes :</b> le bot publie ses groupes réels via <code>bot/panel-bridge.js</code> ; le panneau lit <code>bot/data/groups.json</code> et lui transmet ses commandes. Sans pont installé, l’onglet Groupes affiche l’état réel : aucun groupe lu.</p><div class="notice">Sans disque persistant, Render peut supprimer la session WhatsApp lors d’un redéploiement ou redémarrage. Le code ne simule pas la connexion : il affiche uniquement un code produit par le processus réel. Aucun groupe n’est inventé non plus : tout vient de WhatsApp ou reste vide.</div></div></section></main></div>
 <script>
 let currentPath='', currentEdit='', isAdmin=false; const $=id=>document.getElementById(id); async function api(url,opt={}){const r=await fetch(url,{...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Erreur serveur');return d}
-async function boot(){const me=await api('/api/me').catch(()=>({authenticated:false}));isAdmin=Boolean(me&&me.authenticated);applyMode();refresh();connectWS();loadGroups()} function applyMode(){document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin));$('navFiles').classList.toggle('hidden',!isAdmin);$('navSettings').classList.toggle('hidden',!isAdmin);$('logoutBtn').classList.toggle('hidden',!isAdmin);$('modeNote').textContent=isAdmin?'Administrateur · accès complet':'Vue publique · lecture seule'}
+async function boot(){const me=await api('/api/me').catch(()=>({authenticated:false}));isAdmin=Boolean(me&&me.authenticated);applyMode();refresh();connectWS();loadGroups()} function applyMode(){document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin));$('navFiles').classList.toggle('hidden',!isAdmin);$('navSettings').classList.toggle('hidden',!isAdmin);$('logoutBtn').classList.toggle('hidden',!isAdmin);$('loginBtn').classList.toggle('hidden',isAdmin);$('modeNote').textContent=isAdmin?'Administrateur · accès complet':'Vue publique · lecture seule'}
 async function login(){try{await api('/api/login',{method:'POST',body:JSON.stringify({password:(document.getElementById('password')||{}).value})});location.reload()}catch(e){alert(e.message)}} async function logout(){await api('/api/logout',{method:'POST'});location.reload()}
 function tab(name,btn){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(name).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');$('title').textContent=btn?btn.textContent:name;if(name==='files')loadFiles('');if(name==='groups')loadGroups()}
 function fmt(s){return s<60?s+' s':Math.floor(s/60)+' min'} function update(s){$('status').textContent=s.status==='online'?'ON':'OFF';$('connection').textContent=s.connection||'—';$('uptime').textContent=fmt(s.uptime||0);$('memory').textContent=Math.round((s.memory||0)/1024/1024)+' MB';$('badge').textContent=s.status==='online'?'En ligne':'Hors ligne';$('badge').className='badge '+(s.status==='online'?'online':'');if(s.pairingCode&&isAdmin){$('pairCard').classList.remove('hidden');$('pairCode').textContent=s.pairingCode}else if(s.connection==='connected'||!isAdmin)$('pairCard').classList.add('hidden')}
@@ -396,6 +396,27 @@ function openSheet(title, html, setup) {
 }
 function closeSheet() { document.querySelectorAll('[data-modal="sheet"]').forEach(node => node.remove()) }
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSheet() })
+
+function openAdminLogin(){
+  openSheet('Connexion administrateur', `
+    <p style="margin-bottom:6px">Le tableau de bord est public. Les actions sur les groupes et l’édition des fichiers du bot demandent le mot de passe administrateur.</p>
+    <label for="adminPass">Mot de passe</label>
+    <input id="adminPass" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password">
+    <div class="foot"><button class="cancel" onclick="closeSheet()">Annuler</button><button class="go" id="adminGo">Se connecter</button></div>`, sheet => {
+    const input = sheet.querySelector('#adminPass'), button = sheet.querySelector('#adminGo')
+    const submit = async () => {
+      button.disabled = true; button.textContent = 'Connexion…'
+      try { await api('/api/login', { method: 'POST', body: JSON.stringify({ password: input.value }) }); location.reload() }
+      catch (error) {
+        button.disabled = false; button.textContent = 'Se connecter'
+        toast(error.message === 'Mot de passe administrateur invalide' ? 'Mot de passe invalide' : error.message, 'err')
+      }
+    }
+    button.onclick = submit
+    input.onkeydown = event => { if (event.key === 'Enter') submit() }
+    setTimeout(() => input.focus(), 60)
+  })
+}
 
 boot();
 </script></body></html>
