@@ -1,18 +1,422 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assistant Bot Pairing</title><style>
-:root{--bg:#0b1118;--panel:#121c27;--line:#223244;--text:#e8f0f7;--muted:#8fa3b5;--green:#20d27a;--red:#ff6074;--blue:#4ca3ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#153047 0,#0b1118 42%);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}button,input,textarea{font:inherit}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer;color:white;background:#24364a}button.primary{background:var(--green);color:#06130d}button.danger{background:var(--red)}button.blue{background:var(--blue);color:#07111d}.hidden{display:none!important}.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}.side{padding:25px 18px;border-right:1px solid var(--line);background:#0c151f}.brand{font-weight:900;font-size:20px;margin-bottom:36px}.brand span{color:var(--green)}nav button{display:block;width:100%;text-align:left;margin:7px 0;background:transparent;color:var(--muted)}nav button.active,nav button:hover{background:#183127;color:white}.main{padding:30px;max-width:1200px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px}.top h1{font-size:28px;margin:0}.badge{padding:8px 12px;border-radius:99px;background:#27313c;color:var(--muted);font-weight:700}.badge.online{background:#123a28;color:var(--green)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:rgba(18,28,39,.92);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 30px #0002}.card h2,.card h3{margin:0 0 14px}.metric{font-size:28px;font-weight:900}.muted{color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:10px}.wide{grid-column:1/-1}.logs{height:320px;overflow:auto;background:#071018;border-radius:10px;padding:14px;font:12px ui-monospace,monospace}.log{padding:4px 0;border-bottom:1px solid #162431;white-space:pre-wrap;word-break:break-word}.log.error{color:var(--red)}.log.success{color:var(--green)}.pair{display:flex;align-items:center;justify-content:space-between;gap:15px;background:#0b2c24;border:1px solid #1d9d68;border-radius:14px;padding:18px}.code{font:900 28px ui-monospace,monospace;letter-spacing:5px;color:var(--green)}.tabs{display:none}.filebar{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.file{padding:13px;border:1px solid var(--line);border-radius:10px;background:#0e1822;cursor:pointer}.file:hover{border-color:var(--green)}textarea{width:100%;min-height:420px;background:#071018;border:1px solid var(--line);border-radius:10px;color:#d9e7f3;padding:14px;font:13px ui-monospace,monospace}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.login .card{width:min(420px,100%)}input{width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);background:#071018;color:white;margin:10px 0 14px}.notice{padding:12px;border-radius:10px;background:#382d15;color:#ffd982;margin:10px 0;font-size:13px}@media(max-width:760px){.shell{display:block}.side{position:sticky;top:0;z-index:2;border-right:0;border-bottom:1px solid var(--line);padding:14px}.brand{margin:0 0 10px}.side nav{display:flex;gap:6px;overflow:auto}.side nav button{white-space:nowrap;margin:0}.main{padding:18px}.grid{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}.top h1{font-size:22px}.pair{align-items:flex-start;flex-direction:column}.code{font-size:23px}}
+:root{--bg:#0b1118;--panel:#121c27;--line:#223244;--text:#e8f0f7;--muted:#8fa3b5;--green:#20d27a;--red:#ff6074;--blue:#4ca3ff;--fb:#0866ff;--fb-bg:#f0f2f5;--fb-card:#fff;--fb-text:#050505;--fb-muted:#65676b;--fb-line:#dfe3e8}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#153047 0,#0b1118 42%);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}button,input,textarea,select{font:inherit}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer;color:white;background:#24364a}button.primary{background:var(--green);color:#06130d}button.danger{background:var(--red)}button.blue{background:var(--blue);color:#07111d}.hidden{display:none!important}.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}.side{padding:25px 18px;border-right:1px solid var(--line);background:#0c151f}.brand{font-weight:900;font-size:20px;margin-bottom:36px}.brand span{color:var(--green)}nav button{display:block;width:100%;text-align:left;margin:7px 0;background:transparent;color:var(--muted)}nav button.active,nav button:hover{background:#183127;color:white}.main{padding:30px;max-width:1200px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px}.top h1{font-size:28px;margin:0}.badge{padding:8px 12px;border-radius:99px;background:#27313c;color:var(--muted);font-weight:700}.badge.online{background:#123a28;color:var(--green)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:rgba(18,28,39,.92);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 30px #0002}.card h2,.card h3{margin:0 0 14px}.metric{font-size:28px;font-weight:900}.muted{color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:10px}.wide{grid-column:1/-1}.logs{height:320px;overflow:auto;background:#071018;border-radius:10px;padding:14px;font:12px ui-monospace,monospace}.log{padding:4px 0;border-bottom:1px solid #162431;white-space:pre-wrap;word-break:break-word}.log.error{color:var(--red)}.log.success{color:var(--green)}.pair{display:flex;align-items:center;justify-content:space-between;gap:15px;background:#0b2c24;border:1px solid #1d9d68;border-radius:14px;padding:18px}.code{font:900 28px ui-monospace,monospace;letter-spacing:5px;color:var(--green)}.filebar{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.file{padding:13px;border:1px solid var(--line);border-radius:10px;background:#0e1822;cursor:pointer}.file:hover{border-color:var(--green)}textarea{width:100%;min-height:420px;background:#071018;border:1px solid var(--line);border-radius:10px;color:#d9e7f3;padding:14px;font:13px ui-monospace,monospace}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.login .card{width:min(420px,100%)}input{width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);background:#071018;color:white;margin:10px 0 14px}.notice{padding:12px;border-radius:10px;background:#382d15;color:#ffd982;margin:10px 0;font-size:13px}@media(max-width:760px){.shell{display:block}.side{position:sticky;top:0;z-index:2;border-right:0;border-bottom:1px solid var(--line);padding:14px}.brand{margin:0 0 10px}.side nav{display:flex;gap:6px;overflow:auto}.side nav button{white-space:nowrap;margin:0}.main{padding:18px}.grid{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}.top h1{font-size:22px}.pair{align-items:flex-start;flex-direction:column}.code{font-size:23px}}
+
+/* ======================================================================
+   Groupes — surface claire au langage visuel de Facebook
+   ====================================================================== */
+.gfb{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;padding:18px;border-radius:16px;background:var(--fb-bg);color:var(--fb-text);font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;box-shadow:0 18px 45px #0005}
+.gfb *{box-sizing:border-box}
+.gfb h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.2px}
+.gfb h2{margin:0 0 10px;font-size:17px;font-weight:700;letter-spacing:-.1px}
+.gfb p{margin:0;color:var(--fb-muted);font-size:13px}
+.gfb-side{position:sticky;top:18px;align-self:start;display:flex;flex-direction:column;gap:10px}
+.gfb-side-title{display:flex;align-items:center;gap:10px;padding:4px 2px 8px}
+.gfb-side-title span{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--fb);color:#fff;flex:none}
+.gfb-side nav{display:flex;flex-direction:column;gap:2px}
+.gfb-side nav button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 12px;border-radius:8px;background:transparent;color:var(--fb-text);font-weight:600;font-size:14px;text-align:left}
+.gfb-side nav button:hover{background:#e4e6eb}
+.gfb-side nav button.on{background:#e7f3ff;color:var(--fb)}
+.gfb-side nav button b{padding:1px 7px;border-radius:99px;background:rgba(0,0,0,.07);font-size:12px}
+.gfb-side nav button.on b{background:#cce4ff;color:var(--fb)}
+.gfb-create{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border-radius:8px;background:var(--fb);color:#fff;font-weight:600;font-size:14px}
+.gfb-create:hover{background:#075bd6}
+.gfb-refresh{width:100%;padding:10px;border-radius:8px;background:#e4e6eb;color:var(--fb-text);font-weight:600;font-size:13px}
+.gfb-refresh:hover{background:#d8dadf}
+.gfb-source{margin-top:6px;padding:11px 12px;border:1px solid var(--fb-line);border-radius:10px;background:#fff;font-size:12px;line-height:1.5;color:var(--fb-muted)}
+.gfb-source b{color:var(--fb-text);font-weight:600}
+.gfb-source .chip{display:inline-block;margin-bottom:6px;padding:2px 8px;border-radius:99px;background:#e7f3ff;color:var(--fb);font-size:11px;font-weight:700}
+.gfb-source .chip.warn{background:#fff3cd;color:#8a6100}
+.gfb-source .chip.err{background:#fde8e8;color:#b42318}
+.gfb-main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.gfb-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 18px;border-radius:12px;background:var(--fb-card);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.gfb-head>div:first-child{flex:1;min-width:180px}
+.gfb-search{position:relative;display:flex;align-items:center;flex:0 1 260px}
+.gfb-search input{width:100%;margin:0;padding:10px 14px 10px 38px;border:1px solid transparent;border-radius:20px;background:var(--fb-bg);color:var(--fb-text);font-size:14px}
+.gfb-search input:focus{outline:none;border-color:#a8c7fa;background:#fff;box-shadow:0 0 0 3px rgba(8,102,255,.12)}
+.gfb-search svg{position:absolute;left:12px;width:16px;height:16px;fill:var(--fb-muted);pointer-events:none}
+.gfb-primary{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:8px;background:var(--fb);color:#fff;font-weight:600;font-size:14px;white-space:nowrap}
+.gfb-primary:hover{background:#075bd6}
+.gfb-tabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--fb-card);box-shadow:0 1px 2px rgba(0,0,0,.1);overflow:auto}
+.gfb-tabs button{padding:9px 14px;border-radius:8px;background:transparent;color:var(--fb-muted);font-weight:600;font-size:13.5px;white-space:nowrap}
+.gfb-tabs button:hover{background:var(--fb-bg)}
+.gfb-tabs button.on{background:#e7f3ff;color:var(--fb)}
+.gfb-tabs button b{margin-left:6px;padding:1px 7px;border-radius:99px;background:rgba(0,0,0,.07);font-size:11.5px;font-weight:700}
+.gfb-tabs button.on b{background:#cce4ff}
+.gfb-block{padding:16px 18px;border-radius:12px;background:var(--fb-card);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.gfb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.gfb-card{position:relative;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--fb-line);border-radius:10px;background:#fff;transition:box-shadow .15s,transform .15s}
+.gfb-card:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,0,0,.12)}
+.gfb-cover{position:relative;height:112px;background:linear-gradient(135deg,#1877f2,#8b5cf6);background-size:cover;background-position:center}
+.gfb-cover .gfb-dots{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:30px;height:30px;padding:0;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;font-size:18px;line-height:1;backdrop-filter:blur(4px)}
+.gfb-cover .gfb-dots:hover{background:rgba(0,0,0,.6)}
+.gfb-avatar{position:absolute;left:12px;bottom:-22px;display:grid;place-items:center;width:52px;height:52px;border:3px solid #fff;border-radius:50%;overflow:hidden;background:#1877f2;color:#fff;font-weight:700;font-size:17px;background-size:cover;background-position:center}
+.gfb-body{display:flex;flex-direction:column;gap:3px;padding:28px 12px 12px}
+.gfb-name{font-size:15px;font-weight:600;color:var(--fb-text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gfb-meta{color:var(--fb-muted);font-size:12.5px}
+.gfb-role{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:99px;background:#f0f2f5;color:#3b3f45;font-size:11px;font-weight:600}
+.gfb-actions{display:flex;gap:8px;margin-top:8px}
+.gfb-actions button{flex:1;padding:8px;border-radius:8px;background:var(--fb-bg);color:var(--fb-text);font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gfb-actions button:hover{background:#e4e6eb}
+.gfb-actions button.go{background:var(--fb);color:#fff}
+.gfb-actions button.go:hover{background:#075bd6}
+.gfb-locked{margin-top:8px;padding:7px 10px;border-radius:8px;background:var(--fb-bg);color:var(--fb-muted);font-size:12px;text-align:center}
+.gfb-empty{display:grid;justify-items:center;gap:8px;padding:34px 18px;text-align:center}
+.gfb-empty .ring{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#e7f3ff;color:var(--fb);font-size:28px}
+.gfb-empty strong{font-size:16px}
+.gfb-empty p{max-width:460px}
+.gfb-empty code{display:block;width:100%;max-width:520px;margin-top:6px;padding:10px 12px;border-radius:8px;background:#f0f2f5;color:#1c1e21;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;text-align:left}
+.gfb-invite{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--fb-bg)}
+.gfb-invite:last-child{border-bottom:0}
+.gfb-invite .who{flex:1;min-width:0}
+.gfb-invite strong{display:block;font-size:14px;font-weight:600}
+.gfb-menu{position:fixed;z-index:70;min-width:196px;padding:6px;border-radius:10px;background:#fff;color:var(--fb-text);box-shadow:0 12px 32px rgba(0,0,0,.24)}
+.gfb-menu button{display:block;width:100%;padding:9px 10px;border-radius:7px;background:transparent;color:var(--fb-text);font-weight:500;font-size:13.5px;text-align:left}
+.gfb-menu button:hover{background:var(--fb-bg)}
+.gfb-menu button.danger{color:#d31145}
+.gfb-menu hr{margin:5px 4px;border:0;border-top:1px solid var(--fb-line)}
+.gfb-modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.62)}
+.gfb-sheet{width:min(520px,100%);max-height:calc(100vh - 40px);overflow:auto;padding:18px;border-radius:12px;background:#fff;color:var(--fb-text);box-shadow:0 24px 70px rgba(0,0,0,.4)}
+.gfb-sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--fb-line)}
+.gfb-sheet header h3{margin:0;font-size:20px;font-weight:700}
+.gfb-sheet .close{display:grid;place-items:center;width:32px;height:32px;padding:0;border-radius:50%;background:var(--fb-bg);color:var(--fb-text);font-size:20px}
+.gfb-sheet label{display:block;margin:10px 0 6px;color:var(--fb-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.gfb-sheet input,.gfb-sheet textarea{width:100%;margin:0;padding:10px 12px;border:1px solid var(--fb-line);border-radius:8px;background:#fff;color:var(--fb-text);font-size:14px}
+.gfb-sheet textarea{min-height:76px;resize:vertical;font:14px inherit}
+.gfb-sheet input:focus,.gfb-sheet textarea:focus{outline:none;border-color:#a8c7fa;box-shadow:0 0 0 3px rgba(8,102,255,.14)}
+.gfb-sheet .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--fb-line)}
+.gfb-sheet .foot button{padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px}
+.gfb-sheet .foot .cancel{background:var(--fb-bg);color:var(--fb-text)}
+.gfb-sheet .foot .go{background:var(--fb);color:#fff}
+.gfb-sheet .foot .go:disabled{opacity:.55;cursor:progress}
+.gfb-toast{position:fixed;left:50%;bottom:26px;z-index:90;transform:translateX(-50%);padding:12px 18px;border-radius:10px;background:#050505;color:#fff;font-size:13.5px;box-shadow:0 14px 34px rgba(0,0,0,.35);opacity:0;transition:opacity .18s,transform .18s}
+.gfb-toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+.gfb-toast.err{background:#b42318}
+@media(max-width:1000px){.gfb{grid-template-columns:1fr}.gfb-side{position:static}.gfb-side nav{flex-direction:row;flex-wrap:wrap}.gfb-side nav button{width:auto}.gfb-create,.gfb-refresh{width:auto}}
+@media(max-width:640px){.gfb{padding:12px}.gfb-head{flex-direction:column;align-items:stretch}.gfb-search{flex:1 1 auto}.gfb-grid{grid-template-columns:1fr 1fr}}
 </style></head><body>
 <div id="login" class="login hidden" aria-hidden="true"></div>
-<div id="app" class="shell"><aside class="side"><div class="brand">Assistant Bot <span>Pairing</span></div><nav><button class="active" onclick="tab('dashboard',this)">Tableau de bord</button></nav><p class="muted" style="font-size:12px;margin-top:18px">Vue publique · lecture seule</p></aside><main class="main"><div class="top"><div><h1 id="title">Tableau de bord</h1><p class="muted">Gestion réelle de votre instance WhatsApp</p></div><span id="badge" class="badge">Hors ligne</span></div>
+<div id="app" class="shell"><aside class="side"><div class="brand">Assistant Bot <span>Pairing</span></div><nav><button class="active" onclick="tab('dashboard',this)">Tableau de bord</button><button onclick="tab('groups',this)">Groupes</button><button id="navFiles" class="hidden" onclick="tab('files',this)">Fichiers du bot</button><button id="navSettings" class="hidden" onclick="tab('settings',this)">Paramètres</button></nav><p id="modeNote" class="muted" style="font-size:12px;margin-top:18px">Vue publique · lecture seule</p><button id="loginBtn" style="margin-top:12px;width:100%;background:transparent;color:var(--muted);font-weight:600" onclick="openAdminLogin()">Connexion administrateur</button><button id="logoutBtn" class="hidden" style="margin-top:12px;width:100%" onclick="logout()">Déconnexion</button></aside><main class="main"><div class="top"><div><h1 id="title">Tableau de bord</h1><p class="muted">Gestion réelle de votre instance WhatsApp</p></div><span id="badge" class="badge">Hors ligne</span></div>
 <section id="dashboard" class="page"><div class="grid"><div class="card"><div class="muted">Processus</div><div id="status" class="metric">OFF</div></div><div class="card"><div class="muted">Connexion WhatsApp</div><div id="connection" class="metric">—</div></div><div class="card"><div class="muted">Uptime</div><div id="uptime" class="metric">0 s</div></div><div class="card"><div class="muted">Mémoire</div><div id="memory" class="metric">0 MB</div></div><div class="card wide"><h3>État du service</h3><p class="muted">Cette page est publique. Les commandes d’administration et les données de jumelage restent protégées.</p></div><div id="pairCard" class="card wide hidden"><h3>Pairing code WhatsApp</h3><div class="pair"><div><div class="muted">Code généré en temps réel par le bot</div><div id="pairCode" class="code">—</div><small class="muted">WhatsApp → Appareils connectés → Connecter avec un numéro</small></div><button class="primary" onclick="copyCode()">Copier le code</button></div></div><div class="card wide"><h3>Logs en temps réel</h3><div id="logs" class="logs"></div></div></div></section>
+
+<section id="groups" class="page hidden"><div class="gfb">
+  <aside class="gfb-side">
+    <div class="gfb-side-title"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0v1H5v-1Z"/></svg></span><div><h2 style="margin:0">Groupes</h2><p>Communautés WhatsApp</p></div></div>
+    <nav>
+      <button class="on" id="side-all" onclick="setGroupTab('all')">Tous les groupes <b id="sideCountAll">0</b></button>
+      <button id="side-private" onclick="setGroupTab('private')">Privés <b id="sideCountPrivate">0</b></button>
+      <button id="side-public" onclick="setGroupTab('public')">Publics <b id="sideCountPublic">0</b></button>
+      <button id="side-invites" class="admin-only hidden" onclick="setGroupTab('invites')">Invitations <b id="sideCountInvites">0</b></button>
+    </nav>
+    <button class="gfb-create admin-only hidden" onclick="openCreateGroup()">+ Créer un groupe</button>
+    <button class="gfb-refresh" id="refreshGroupsBtn" onclick="refreshGroups()">Actualiser les groupes ↻</button>
+    <div class="gfb-source" id="groupSource">Lecture de l’état du bot…</div>
+  </aside>
+  <div class="gfb-main">
+    <header class="gfb-head">
+      <div><h1>Vos groupes</h1><p id="groupSubtitle">Vos communautés et les groupes à découvrir, au même endroit.</p></div>
+      <label class="gfb-search"><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.13l4.24 4.23-1.42 1.42-4.23-4.24A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg><input id="groupSearch" type="search" placeholder="Rechercher un groupe" oninput="renderGroups()"></label>
+      <button class="gfb-primary admin-only hidden" onclick="openCreateGroup()">+ Créer un groupe</button>
+    </header>
+    <div class="gfb-tabs" id="groupTabs">
+      <button class="on" data-tab="all" onclick="setGroupTab('all',this)">Tous <b id="tabCountAll">0</b></button>
+      <button data-tab="private" onclick="setGroupTab('private',this)">Privés <b id="tabCountPrivate">0</b></button>
+      <button data-tab="public" onclick="setGroupTab('public',this)">Publics <b id="tabCountPublic">0</b></button>
+      <button data-tab="invites" class="admin-only hidden" onclick="setGroupTab('invites',this)">Invitations <b id="tabCountInvites">0</b></button>
+    </div>
+    <div id="groupsNotice" class="gfb-block hidden"></div>
+    <section id="invitesBlock" class="gfb-block hidden"><h2>Invitations et demandes d’adhésion</h2><div id="invitesList"></div></section>
+    <section class="gfb-block"><h2 id="groupsHeading">Groupes que vous avez rejoints</h2><div id="groupsGrid" class="gfb-grid"></div><div id="groupsEmpty" class="gfb-empty hidden"></div></section>
+  </div>
+</div></section>
+
 <section id="files" class="page hidden"><div class="card"><div class="filebar"><h3>Fichiers du bot</h3><button onclick="loadFiles('')">Actualiser</button></div><p id="path" class="muted">/bot</p><div id="fileList" class="files"></div></div><div id="editorCard" class="card hidden" style="margin-top:15px"><h3 id="editorName">Éditeur</h3><textarea id="editor"></textarea><div class="actions" style="margin-top:12px"><button class="primary" onclick="saveFile()">Enregistrer</button><button onclick="closeEditor()">Fermer</button></div></div></section>
-<section id="settings" class="page hidden"><div class="card"><h3>Configuration</h3><p><b>Plateforme :</b> Assistant Bot Pairing</p><p><b>Bot :</b> AssistantBot V1.2.2 fourni par l’administrateur</p><p><b>Exécution :</b> Node.js + Baileys</p><p><b>Stockage session :</b> <code>BOT_AUTH_DIR</code> (à placer sur un disque persistant Render)</p><div class="notice">Sans disque persistant, Render peut supprimer la session WhatsApp lors d’un redéploiement ou redémarrage. Le code ne simule pas la connexion : il affiche uniquement un code produit par le processus réel.</div></div></section></main></div>
+<section id="settings" class="page hidden"><div class="card"><h3>Configuration</h3><p><b>Plateforme :</b> Assistant Bot Pairing</p><p><b>Bot :</b> AssistantBot V1.2.2 fourni par l’administrateur</p><p><b>Exécution :</b> Node.js + Baileys</p><p><b>Stockage session :</b> <code>BOT_AUTH_DIR</code> (à placer sur un disque persistant Render)</p><p><b>Groupes :</b> le bot publie ses groupes réels via <code>bot/panel-bridge.js</code> ; le panneau lit <code>bot/data/groups.json</code> et lui transmet ses commandes. Sans pont installé, l’onglet Groupes affiche l’état réel : aucun groupe lu.</p><div class="notice">Sans disque persistant, Render peut supprimer la session WhatsApp lors d’un redéploiement ou redémarrage. Le code ne simule pas la connexion : il affiche uniquement un code produit par le processus réel. Aucun groupe n’est inventé non plus : tout vient de WhatsApp ou reste vide.</div></div></section></main></div>
 <script>
-let currentPath='', currentEdit=''; const $=id=>document.getElementById(id); async function api(url,opt={}){const r=await fetch(url,{...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Erreur serveur');return d}
-async function boot(){refresh();connectWS()} async function login(){try{await api('/api/login',{method:'POST',body:JSON.stringify({password:$('password').value})});location.reload()}catch(e){$('loginError').textContent=e.message;$('loginError').classList.remove('hidden')}} async function logout(){await api('/api/logout',{method:'POST'});location.reload()}
-function tab(name,btn){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(name).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');$('title').textContent=btn.textContent;if(name==='files')loadFiles('')}
-function fmt(s){return s<60?s+' s':Math.floor(s/60)+' min'} function update(s){$('status').textContent=s.status==='online'?'ON':'OFF';$('connection').textContent=s.connection||'—';$('uptime').textContent=fmt(s.uptime||0);$('memory').textContent=Math.round((s.memory||0)/1024/1024)+' MB';$('badge').textContent=s.status==='online'?'En ligne':'Hors ligne';$('badge').className='badge '+(s.status==='online'?'online':'');$('pairCard').classList.add('hidden')}
-function addLog(l){const e=document.createElement('div');e.className='log '+(l.level||'');e.textContent=`${new Date(l.time).toLocaleTimeString()} ${l.message}`;$('logs').appendChild(e);$('logs').scrollTop=$('logs').scrollHeight} async function refresh(){try{const s=await api('/api/status');update(s);$('logs').innerHTML='';s.logs.forEach(addLog)}catch(e){}} async function action(url){try{const s=await api(url,{method:'POST'});if(s.state)update(s.state)}catch(e){alert(e.message)}} async function resetPairing(){if(confirm('Supprimer la session WhatsApp et générer un nouveau code ?'))action('/api/pairing/reset')}
-function connectWS(){const ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host);ws.onmessage=e=>{const d=JSON.parse(e.data);if(d.type==='status')update(d.data);if(d.type==='log')addLog(d.data);if(d.type==='pairing'){}if(d.type==='connection')refresh()};ws.onclose=()=>setTimeout(connectWS,3000)}
-async function loadFiles(p=''){currentPath=p;try{const d=await api('/api/files?path='+encodeURIComponent(p));$('path').textContent='/bot/'+(p||'');$('fileList').innerHTML='';if(p){const up=p.split('/').slice(0,-1).join('/');const el=document.createElement('div');el.className='file';el.textContent='↩ Dossier parent';el.onclick=()=>loadFiles(up);$('fileList').appendChild(el)}d.files.forEach(f=>{const el=document.createElement('div');el.className='file';el.textContent=(f.type==='folder'?'📁 ':'📄 ')+f.name;el.onclick=()=>f.type==='folder'?loadFiles((p?p+'/':'')+f.name):openFile((p?p+'/':'')+f.name);$('fileList').appendChild(el)})}catch(e){alert(e.message)}} async function openFile(p){currentEdit=p;const d=await api('/api/file?path='+encodeURIComponent(p));$('editorName').textContent=p;$('editor').value=d.content;$('editorCard').classList.remove('hidden')}async function saveFile(){await api('/api/file',{method:'POST',body:JSON.stringify({path:currentEdit,content:$('editor').value})});alert('Fichier enregistré');loadFiles(currentPath)}function closeEditor(){$('editorCard').classList.add('hidden')}function copyCode(){navigator.clipboard.writeText($('pairCode').textContent)} boot();
+let currentPath='', currentEdit='', isAdmin=false; const $=id=>document.getElementById(id); async function api(url,opt={}){const r=await fetch(url,{...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Erreur serveur');return d}
+async function boot(){const me=await api('/api/me').catch(()=>({authenticated:false}));isAdmin=Boolean(me&&me.authenticated);applyMode();refresh();connectWS();loadGroups()} function applyMode(){document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin));$('navFiles').classList.toggle('hidden',!isAdmin);$('navSettings').classList.toggle('hidden',!isAdmin);$('logoutBtn').classList.toggle('hidden',!isAdmin);$('loginBtn').classList.toggle('hidden',isAdmin);$('modeNote').textContent=isAdmin?'Administrateur · accès complet':'Vue publique · lecture seule'}
+async function login(){try{await api('/api/login',{method:'POST',body:JSON.stringify({password:(document.getElementById('password')||{}).value})});location.reload()}catch(e){alert(e.message)}} async function logout(){await api('/api/logout',{method:'POST'});location.reload()}
+function tab(name,btn){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(name).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');$('title').textContent=btn?btn.textContent:name;if(name==='files')loadFiles('');if(name==='groups')loadGroups()}
+function fmt(s){return s<60?s+' s':Math.floor(s/60)+' min'} function update(s){$('status').textContent=s.status==='online'?'ON':'OFF';$('connection').textContent=s.connection||'—';$('uptime').textContent=fmt(s.uptime||0);$('memory').textContent=Math.round((s.memory||0)/1024/1024)+' MB';$('badge').textContent=s.status==='online'?'En ligne':'Hors ligne';$('badge').className='badge '+(s.status==='online'?'online':'');if(s.pairingCode&&isAdmin){$('pairCard').classList.remove('hidden');$('pairCode').textContent=s.pairingCode}else if(s.connection==='connected'||!isAdmin)$('pairCard').classList.add('hidden')}
+function addLog(l){const e=document.createElement('div');e.className='log '+(l.level||'');e.textContent=`${new Date(l.time).toLocaleTimeString()} ${l.message}`;$('logs').appendChild(e);$('logs').scrollTop=$('logs').scrollHeight} async function refresh(){try{const s=await api('/api/status');update(s);$('logs').innerHTML='';s.logs.forEach(addLog)}catch(e){}}
+function connectWS(){const ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host);ws.onmessage=e=>{const d=JSON.parse(e.data);if(d.type==='status')update(d.data);if(d.type==='log')addLog(d.data);if(d.type==='connection')refresh()};ws.onclose=()=>setTimeout(connectWS,3000)}
+async function loadFiles(p=''){currentPath=p;try{const d=await api('/api/files?path='+encodeURIComponent(p));$('path').textContent='/bot/'+(p||'');$('fileList').innerHTML='';if(p){const up=p.split('/').slice(0,-1).join('/');const el=document.createElement('div');el.className='file';el.textContent='↩ Dossier parent';el.onclick=()=>loadFiles(up);$('fileList').appendChild(el)}d.files.forEach(f=>{const el=document.createElement('div');el.className='file';el.textContent=(f.type==='folder'?'📁 ':'📄 ')+f.name;el.onclick=()=>f.type==='folder'?loadFiles((p?p+'/':'')+f.name):openFile((p?p+'/':'')+f.name);$('fileList').appendChild(el)})}catch(e){alert(e.message)}} async function openFile(p){currentEdit=p;const d=await api('/api/file?path='+encodeURIComponent(p));$('editorName').textContent=p;$('editor').value=d.content;$('editorCard').classList.remove('hidden')}async function saveFile(){await api('/api/file',{method:'POST',body:JSON.stringify({path:currentEdit,content:$('editor').value})});alert('Fichier enregistré');loadFiles(currentPath)}function closeEditor(){$('editorCard').classList.add('hidden')}function copyCode(){navigator.clipboard.writeText($('pairCode').textContent)}
+
+/* ============================================================ Groupes ==== */
+let groupState = { groups: [], invitations: [], bridge: {}, available: false, source: null, error: null, updatedAt: null, stale: true }
+let groupTab = 'all'
+const ROLE_LABEL = { owner: 'Responsable', admin: 'Admin', member: 'Membre' }
+const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+const initials = name => String(name || '?').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
+const groupsEndpoint = () => isAdmin ? '/api/groups' : '/api/groups/public'
+
+function toast(message, kind) {
+  let el = document.querySelector('.gfb-toast')
+  if (!el) { el = document.createElement('div'); el.className = 'gfb-toast'; document.body.appendChild(el) }
+  el.textContent = message; el.className = 'gfb-toast show' + (kind === 'err' ? ' err' : '')
+  clearTimeout(el._timer); el._timer = setTimeout(() => { el.className = 'gfb-toast' }, 4200)
+}
+function bgTint(seed) {
+  let hash = 0; for (const char of String(seed || '')) hash = (hash * 31 + char.charCodeAt(0)) % 360
+  return `linear-gradient(135deg,hsl(${hash} 68% 46%),hsl(${(hash + 46) % 360} 72% 58%))`
+}
+function sinceLabel(iso) {
+  if (!iso) return 'jamais'
+  const seconds = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000))
+  if (seconds < 60) return `il y a ${seconds} s`
+  if (seconds < 3600) return `il y a ${Math.round(seconds / 60)} min`
+  return `il y a ${Math.round(seconds / 3600)} h`
+}
+
+async function loadGroups() {
+  try { groupState = await api(groupsEndpoint()); renderSource(); renderGroups() }
+  catch (error) { groupState = { ...groupState, available: false, error: error.message }; renderSource(); renderGroups() }
+}
+async function refreshGroups() {
+  if (!isAdmin) { await loadGroups(); toast('Liste rechargée'); return }
+  try { const { id } = await api('/api/groups/refresh', { method: 'POST' }); toast('Rafraîchissement demandé au bot…'); await waitCommand(id, true) } catch (error) { toast(error.message, 'err') }
+}
+async function waitCommand(id, silent) {
+  for (let tries = 0; tries < 45; tries += 1) {
+    const result = await api('/api/groups/command/' + encodeURIComponent(id)).catch(() => null)
+    if (result && (result.status === 'done' || result.status === 'error' || result.status === 'timeout')) {
+      if (result.status === 'error') { if (!silent) toast(result.error || 'Le bot a refusé la commande', 'err'); return result }
+      if (result.status === 'timeout') { if (!silent) toast('Le bot ne répond pas (pont non installé ?)', 'err'); return result }
+      await loadGroups(); return result
+    }
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+  if (!silent) toast('Pas de réponse du bot', 'err')
+  return null
+}
+
+function renderSource() {
+  const box = $('groupSource'); if (!box) return
+  const stamp = groupState.updatedAt ? sinceLabel(groupState.updatedAt) : null
+  const isDemo = groupState.source === 'demo'
+  const chip = !groupState.available ? '<span class="chip warn">Aucune donnée</span>' : groupState.source === 'panel-bridge' ? '<span class="chip">Pont Baileys · WhatsApp</span>' : `<span class="chip warn">${isDemo ? 'Démonstration' : esc(groupState.source || 'source inconnue')}</span>`
+  const demoNote = isDemo ? '<br><span style="color:#8a6100">Données de démonstration : remplacées dès que le pont publie les groupes réels.</span>' : ''
+  const bridgeNote = isAdmin && groupState.bridge ? (groupState.bridge.installed ? '<br>Pont installé : ' + esc(groupState.bridge.target) : '<br>Pont non installé sur le disque du bot') : ''
+  box.innerHTML = chip + `<b>${groupState.groups.length} groupe${groupState.groups.length === 1 ? '' : 's'}</b> · ${groupState.invitations.length} invitation${groupState.invitations.length === 1 ? '' : 's'}<br>Lecture ${esc(stamp || '—')}${demoNote}${groupState.error ? '<br><span style="color:#b42318">' + esc(groupState.error) + '</span>' : ''}${bridgeNote}`
+}
+
+function visibleGroups() {
+  const search = ($('groupSearch') && $('groupSearch').value || '').trim().toLowerCase()
+  return groupState.groups.filter(group => {
+    if (groupTab === 'invites') return false
+    if (groupTab === 'private' && group.privacy !== 'private') return false
+    if (groupTab === 'public' && group.privacy !== 'public') return false
+    if (!search) return true
+    return (group.name + ' ' + (group.description || '')).toLowerCase().includes(search)
+  })
+}
+
+function renderGroups() {
+  if (!$('groupsGrid')) return
+  const groups = groupState.groups
+  const count = { all: groups.length, private: groups.filter(g => g.privacy === 'private').length, public: groups.filter(g => g.privacy === 'public').length, invites: groupState.invitations.length }
+  const suffix = { all: 'All', private: 'Private', public: 'Public', invites: 'Invites' }
+  for (const key of Object.keys(suffix)) {
+    const tabEl = $('tabCount' + suffix[key]); if (tabEl) tabEl.textContent = count[key]
+    const sideEl = $('sideCount' + suffix[key]); if (sideEl) sideEl.textContent = count[key]
+  }
+  document.querySelectorAll('#groupTabs button').forEach(button => button.classList.toggle('on', button.dataset.tab === groupTab))
+  document.querySelectorAll('.gfb-side nav button').forEach(button => button.classList.toggle('on', button.id === 'side-' + groupTab))
+
+  const invitesBox = $('invitesBlock')
+  const showInvites = isAdmin && (groupTab === 'invites' || (groupTab === 'all' && groupState.invitations.length > 0))
+  invitesBox.classList.toggle('hidden', !showInvites)
+  if (showInvites) {
+    $('invitesList').innerHTML = groupState.invitations.length
+      ? groupState.invitations.map(invite => `<div class="gfb-invite"><div class="gfb-avatar" style="position:static;width:44px;height:44px;border:0;background:${bgTint(invite.jid)};font-size:15px">${esc(initials(invite.name))}</div><div class="who"><strong>${esc(invite.name)}</strong><span class="gfb-meta">${invite.invitedBy ? 'Invité par ' + esc(invite.invitedBy) : 'Demande d’adhésion'}</span></div><button class="gfb-primary" onclick="groupCommand('add',{jid:'${esc(invite.jid)}'},'Invitation acceptée')">Accepter</button><button class="gfb-refresh" style="width:auto" onclick="groupCommand('leave',{jid:'${esc(invite.jid)}'},'Invitation ignorée')">Ignorer</button></div>`).join('')
+      : `<p>Aucune invitation ni demande d’adhésion en attente. WhatsApp ne transmet pas d’invitation à un bot : cette liste reste vide tant qu’aucune n’arrive.</p>`
+  }
+
+  const list = visibleGroups()
+  const grid = $('groupsGrid'), empty = $('groupsEmpty')
+  $('groupsHeading').textContent = groupTab === 'all' ? 'Groupes que vous avez rejoints' : groupTab === 'public' ? 'Groupes publics' : groupTab === 'private' ? 'Groupes privés' : 'Vos groupes'
+  grid.classList.toggle('hidden', list.length === 0)
+  empty.classList.toggle('hidden', list.length > 0 || (groupTab === 'invites' && isAdmin))
+
+  if (!list.length && !(groupTab === 'invites' && isAdmin)) {
+    if (!groupState.available) {
+      empty.innerHTML = isAdmin
+        ? `<div class="ring">👥</div><strong>Aucun groupe lu pour l’instant</strong><p>Le panneau lit uniquement ce que le bot publie. Installe le pont (un fichier, une ligne à ajouter dans <b>bot/index.js</b>) : les groupes WhatsApp réels apparaîtront ici.</p><button class="gfb-primary" onclick="installBridge()">Installer le pont dans bot/</button><code>${esc((groupState.bridge && groupState.bridge.snippet) || "require('./panel-bridge').attachPanelBridge(sock)")}</code>`
+        : `<div class="ring">👥</div><strong>Aucun groupe publié</strong><p>Le bot n’a encore rien publié. Cette page se remplit dès que l’administrateur active le pont et que le compte WhatsApp est connecté.</p>`
+    } else if (groupState.groups.length) {
+      empty.innerHTML = `<div class="ring">🔎</div><strong>Aucun résultat</strong><p>Aucun groupe ne correspond à cette recherche ou à ce filtre.</p>`
+    } else {
+      empty.innerHTML = `<div class="ring">👥</div><strong>Le bot n’est dans aucun groupe</strong><p>Ajoute le compte WhatsApp du bot à un groupe, puis actualise.</p>${isAdmin ? '<button class="gfb-primary" onclick="openCreateGroup()">+ Créer un groupe</button>' : ''}`
+    }
+  }
+
+  grid.innerHTML = list.map(group => {
+    const cover = group.coverUrl ? `background-image:url('${esc(group.coverUrl)}')` : `background-image:${bgTint(group.name)}`
+    const avatar = group.avatarUrl ? `background-image:url('${esc(group.avatarUrl)}')` : `background-image:${bgTint(group.name + 'a')}`
+    const meta = `${group.privacy === 'private' ? 'Privé' : 'Public'} · ${group.members} membre${group.members === 1 ? '' : 's'}`
+    const key = group.jid || group.name
+    const actions = isAdmin
+      ? `<div class="gfb-actions"><button class="go" onclick="openChat('${esc(group.jid)}')">Ouvrir le chat</button><button onclick="inviteTo('${esc(group.jid)}')">Inviter</button></div>`
+      : group.inviteUrl
+        ? `<div class="gfb-actions"><button class="go" onclick="window.open('${esc(group.inviteUrl)}','_blank','noopener')">Rejoindre le groupe</button></div>`
+        : `<div class="gfb-locked">${group.privacy === 'private' ? 'Groupe privé · invitation réservée aux membres' : 'Lien d’invitation indisponible'}</div>`
+    return `<article class="gfb-card">
+      <div class="gfb-cover" style="${cover}">${isAdmin ? `<button class="gfb-dots" title="Options" onclick="groupMenu(event,'${esc(group.jid)}')">⋯</button>` : ''}<div class="gfb-avatar" style="${avatar}">${group.avatarUrl ? '' : esc(initials(group.name))}</div></div>
+      <div class="gfb-body">
+        <div class="gfb-name" title="${esc(group.name)}">${esc(group.name)}</div>
+        <div class="gfb-meta">${meta}<span class="gfb-role">${esc(ROLE_LABEL[group.role] || 'Membre')}</span></div>
+        ${actions}
+      </div></article>`
+  }).join('')
+
+  const notice = $('groupsNotice')
+  if (groupState.available && groupState.stale) {
+    notice.classList.remove('hidden')
+    notice.innerHTML = `Dernière publication ${esc(sinceLabel(groupState.updatedAt))} — le pont ne publie plus depuis 2 minutes.`
+  } else notice.classList.add('hidden')
+}
+
+function setGroupTab(next) { groupTab = next; const search = $('groupSearch'); if (search) search.value = ''; renderGroups() }
+
+/* ------------------------------------------------------------ actions */
+const findGroup = jid => groupState.groups.find(group => group.jid === jid)
+async function groupCommand(action, params, successMessage) {
+  if (!isAdmin) { toast('Action réservée à l’administrateur', 'err'); return null }
+  try {
+    const { id } = await api('/api/groups/command', { method: 'POST', body: JSON.stringify({ action, params }) })
+    toast('Commande envoyée au bot…')
+    const result = await waitCommand(id)
+    if (result && result.status === 'done' && successMessage) toast(successMessage)
+    return result
+  } catch (error) { toast(error.message, 'err'); return null }
+}
+async function openChat(jid) {
+  const group = findGroup(jid)
+  if (group && group.inviteUrl) { window.open(group.inviteUrl, '_blank', 'noopener'); return }
+  if (group && group.role === 'member') { toast('Lien indisponible : WhatsApp le réserve aux admins du groupe'); return }
+  const result = await groupCommand('invite', { jid })
+  const url = result && result.data && result.data.inviteUrl
+  if (url) window.open(url, '_blank', 'noopener')
+}
+async function inviteTo(jid) {
+  const group = findGroup(jid)
+  if (group && group.inviteUrl) { await copyText(group.inviteUrl, 'Lien d’invitation copié'); return }
+  const result = await groupCommand('invite', { jid })
+  const url = result && result.data && result.data.inviteUrl
+  if (url) await copyText(url, 'Lien d’invitation copié')
+}
+async function copyText(text, message) { try { await navigator.clipboard.writeText(text); toast(message || 'Copié') } catch { toast(text) } }
+
+function groupMenu(event, jid) {
+  event.stopPropagation(); closeGroupMenu()
+  const menu = document.createElement('div')
+  menu.className = 'gfb-menu'; menu.dataset.menu = 'group'
+  menu.innerHTML = `
+    <button onclick="copyText('${esc(jid)}','Identifiant copié')">Copier l’identifiant</button>
+    <button onclick="editGroup('${esc(jid)}')">Paramètres du groupe</button>
+    <button onclick="inviteTo('${esc(jid)}')">Copier le lien d’invitation</button>
+    <hr>
+    <button class="danger" onclick="leaveGroup('${esc(jid)}')">Quitter le groupe</button>`
+  document.body.appendChild(menu)
+  const rect = event.currentTarget.getBoundingClientRect()
+  menu.style.top = Math.min(window.innerHeight - menu.offsetHeight - 12, rect.bottom + 6) + 'px'
+  menu.style.left = Math.max(12, Math.min(window.innerWidth - menu.offsetWidth - 12, rect.right - menu.offsetWidth)) + 'px'
+  setTimeout(() => document.addEventListener('click', closeGroupMenu, { once: true }), 0)
+}
+function closeGroupMenu() { document.querySelectorAll('[data-menu="group"]').forEach(node => node.remove()) }
+async function leaveGroup(jid) {
+  closeGroupMenu()
+  if (!confirm('Quitter ce groupe avec le compte du bot ?')) return
+  await groupCommand('leave', { jid }, 'Groupe quitté')
+}
+function editGroup(jid) {
+  closeGroupMenu()
+  const group = findGroup(jid) || {}
+  openSheet('Paramètres du groupe', `
+    <label for="editName">Nom du groupe</label>
+    <input id="editName" value="${esc(group.name || '')}" maxlength="80">
+    <label for="editDesc">Description</label>
+    <textarea id="editDesc" maxlength="512">${esc(group.description || '')}</textarea>
+    <div class="foot"><button class="cancel" onclick="closeSheet()">Annuler</button><button class="go" id="editSave">Enregistrer</button></div>`, sheet => {
+    sheet.querySelector('#editSave').onclick = async () => {
+      const name = sheet.querySelector('#editName').value.trim()
+      const description = sheet.querySelector('#editDesc').value
+      if (name && name !== group.name) await groupCommand('rename', { jid, subject: name }, 'Nom mis à jour')
+      if (description !== (group.description || '')) await groupCommand('describe', { jid, description }, 'Description mise à jour')
+      closeSheet()
+    }
+  })
+}
+function openCreateGroup() {
+  if (!isAdmin) { toast('Action réservée à l’administrateur', 'err'); return }
+  openSheet('Créer un groupe', `
+    <p style="margin-bottom:10px">Le groupe est créé par le compte WhatsApp du bot, puis les numéros reçoivent la demande.</p>
+    <label for="newName">Nom du groupe</label>
+    <input id="newName" placeholder="Ex. Avani Pro Officiel" maxlength="80">
+    <label for="newNumbers">Numéros à ajouter (séparés par une virgule)</label>
+    <input id="newNumbers" placeholder="+237 6 90 00 00 00, +237 6 91 11 11 11">
+    <label for="newDesc">Description (facultatif)</label>
+    <textarea id="newDesc" maxlength="512" placeholder="À propos du groupe…"></textarea>
+    <div class="foot"><button class="cancel" onclick="closeSheet()">Annuler</button><button class="go" id="createGo">Créer le groupe</button></div>`, sheet => {
+    const button = sheet.querySelector('#createGo')
+    button.onclick = async () => {
+      const subject = sheet.querySelector('#newName').value.trim()
+      if (!subject) { toast('Donne un nom au groupe', 'err'); return }
+      const participants = sheet.querySelector('#newNumbers').value.split(/[,;\s]+/).map(v => v.trim()).filter(Boolean)
+      const description = sheet.querySelector('#newDesc').value.trim()
+      button.disabled = true; button.textContent = 'Création…'
+      const result = await groupCommand('create', { subject, participants, description }, 'Groupe créé')
+      button.disabled = false; button.textContent = 'Créer le groupe'
+      if (result && result.status === 'done') closeSheet()
+    }
+  })
+}
+async function installBridge() {
+  try {
+    const result = await api('/api/groups/bridge/install', { method: 'POST' })
+    toast('Pont installé : ' + result.target)
+    await loadGroups()
+    openSheet('Dernière étape dans le bot', `
+      <p>Le fichier <b>${esc(result.target)}</b> est en place. Ajoute cette ligne dans <b>bot/index.js</b>, quand la connexion WhatsApp s’ouvre :</p>
+      <code style="display:block;margin-top:10px;padding:12px;border-radius:8px;background:#f0f2f5;font:12px ui-monospace,Menlo,monospace;white-space:pre-wrap">${esc(result.snippet)}</code>
+      <p style="margin-top:10px">Puis redémarre le bot : les groupes réels apparaîtront dans cet onglet.</p>
+      <div class="foot"><button class="go" onclick="closeSheet()">Compris</button></div>`)
+  } catch (error) { toast(error.message, 'err') }
+}
+
+/* ------------------------------------------------------------- modales */
+function openSheet(title, html, setup) {
+  closeSheet()
+  const wrap = document.createElement('div')
+  wrap.className = 'gfb-modal'; wrap.dataset.modal = 'sheet'
+  wrap.innerHTML = `<div class="gfb-sheet"><header><h3>${esc(title)}</h3><button class="close" onclick="closeSheet()">×</button></header><div class="sheet-body">${html}</div></div>`
+  wrap.addEventListener('click', event => { if (event.target === wrap) closeSheet() })
+  document.body.appendChild(wrap)
+  if (setup) setup(wrap.querySelector('.gfb-sheet'))
+}
+function closeSheet() { document.querySelectorAll('[data-modal="sheet"]').forEach(node => node.remove()) }
+document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSheet() })
+
+function openAdminLogin(){
+  openSheet('Connexion administrateur', `
+    <p style="margin-bottom:6px">Le tableau de bord est public. Les actions sur les groupes et l’édition des fichiers du bot demandent le mot de passe administrateur.</p>
+    <label for="adminPass">Mot de passe</label>
+    <input id="adminPass" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password">
+    <div class="foot"><button class="cancel" onclick="closeSheet()">Annuler</button><button class="go" id="adminGo">Se connecter</button></div>`, sheet => {
+    const input = sheet.querySelector('#adminPass'), button = sheet.querySelector('#adminGo')
+    const submit = async () => {
+      button.disabled = true; button.textContent = 'Connexion…'
+      try { await api('/api/login', { method: 'POST', body: JSON.stringify({ password: input.value }) }); location.reload() }
+      catch (error) {
+        button.disabled = false; button.textContent = 'Se connecter'
+        toast(error.message === 'Mot de passe administrateur invalide' ? 'Mot de passe invalide' : error.message, 'err')
+      }
+    }
+    button.onclick = submit
+    input.onkeydown = event => { if (event.key === 'Enter') submit() }
+    setTimeout(() => input.focus(), 60)
+  })
+}
+
+boot();
 </script></body></html>
